@@ -1,8 +1,8 @@
-The [Relay2Tetris simulator](Simulators) simulates the proposed HACK CPU implementation at the board-level, and updates the state of control signals and component inputs and output every clock tick.
+The [Relay2Tetris simulator](/Simulators) simulates the proposed HACK CPU implementation at the board-level, and updates the state of control signals and component inputs and output every clock tick.
 
 Eventually, this simulator will have the ability to interface with the actual hardware, and gradually migrate more and more component functions to the actual device.
 
-The Tests directory contains a set of test programs for the simulator, adapted from the Nand2Tetris HACK tests.
+The Tests subdirectory contains a set of test programs for the simulator, adapted from the Nand2Tetris HACK tests.
 
 **NOTE**: The current version of the simulator is running an older version of the hardware design with fewer clock states than the current design requires. The simulator will be updated in the near future as project requirements dictate.
 

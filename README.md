@@ -1,25 +1,32 @@
 # Relay2Tetris
 
-In 2019, I had the great privilege of being able to see the FACOM 128B computer in operation at Fujitsu's company museum. Delving into the technical details of how this machine worked only increased my admiration for the engineers who designed it. This led to a decision to create my own relay-based computer as a hobby project.
+In 2019, I had the great privilege of being able to see the [FACOM 128B](/Documents/FACOM-128B.pdf) computer in operation at Fujitsu's company museum. Delving into the technical details of how this machine worked only increased my admiration for the engineers who designed it. This has inspired me to create my own relay-based computer as a hobby project.
 
-A few years prior I ran across the Nand2Tetris course, which I highly recommend. The HACK CPU that students implement in the course is a masterpiece of minimalist CPU design, so it was a natural target for my ambitions.
+A few years prior I was introduced to the [Nand2Tetris](https://www.nand2tetris.org/) course, which I highly recommend. The HACK CPU that students implement in the course is a masterpiece of minimalist CPU design, so it was a natural target for my ambitions.
 
 The goal of this project is to completely implement the HACK CPU in relay logic, and also to provide other relay-computer builders with a set of standard board-level relay logic CPU components, such as registers, adders, and so on.
 
-# Archive Contents
+# Completed So Far
 
 * [Conversion of the idealized HACK CPU architecture to a physical model that addresses timing considerations](Design.md).
-* [Component-level HACK simulator](Simulator.md)
-* [Datasheets for various hardware components](Datasheets)
+* [Component-level HACK simulator](Simulator.md).
+* [40-Channel Daisy-chainable Raspberry Pi IO Expansion Board](IOExpander.md).
+* [Datasheets for various hardware components](Datasheets).
 
 The fleshing-out of this archive is an ongoing project; please be patient with the author.
 
-# Current Project Status
+# Ongoing Projects
 
-* Simulator created.
-* 16-Bit Memory Register (Revision 2) built and tested.
-* 40-Channel Raspberry PI Output expander designed, test boards in manufacture.
+* 16-Bit Memory Register: Revision 2.0 built and tested. Project report imminent. [Video Available](https://youtu.be/gMaYLL4p_do).
 * 16-bit Zuse Adder in design stages; 1-bit prototype built.
+
+# Still To Do
+
+* ALU components.
+* Clock and Sequencer.
+* Program Counter & Branch Logic.
+* Program ROM.
+* RAM.
 
 # Acknowledgements
 
@@ -40,4 +47,4 @@ The complete Nand2Tetris course can be found at: https://www.nand2tetris.org/
 
 # License
 
-The materials in this repository are licensed under the [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0)](https://creativecommons.org/licenses/by-nc-sa/4.0/).
+The materials in this repository (except for those provided by outside sources, such as the datasheets) are licensed under the [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0)](https://creativecommons.org/licenses/by-nc-sa/4.0/).
