@@ -31,11 +31,15 @@ The Revision 1.0 board used inexpensive 5V through-hole relays. While fully func
 
 This allowed me to increase the component density and shrink the board significantly. Also, the 3V relays, while 3x as expensive as the cheap 5V ones, also switch 4x faster! So all in all, a good deal! In addition, I added a optional 2:1 multiplexer on the DATA-IN lines, as many of the registers in the final design have two possible inputs.
 
-# Revision 2.0 Features
+# Revision 2.0 Features (many of these also in 1.0)
 
 * Onboard 3V3 regulator.
 
 * Optional diode isolation of inputs and outputs.
+
+* Control signals are ACT (Active, board is powered), ENA (Enable, board responds to control signals), SET, CLR, and MUX (controls whether DATA-0 or DATA-1 input is read). ACT and ENA can be jumpered to be always-on.
+
+* All control inputs power isolation relays; this means an input signal only has to power one relay, even if the signal controls multiple relays on the board. This minimizes the current flowing through the ribbon cables. So for example, the SET control signal activates a single SETALL relay; that relay controls the 8 SET relays on the board. Each relay draws about 33 milli-amps @ 3V, and each relay contact is limited to about 1 amp, so using both contacts on a relay, you can source 2 amps = 60 relays using a single isolation relay. In practice, you don't want to approach this, so ~40 relays per isolation relay is a reasonable limit. The 16-bit register board has 40 relays driven by power sourced from the ACT relay.
 
 * Control signals set by jumpers.
 
@@ -46,7 +50,6 @@ This allowed me to increase the component density and shrink the board significa
 * Jumperable passthrough of the 4 unused IDC-20 signal lines on input to output.
 
 * 3V0 relays running at ~3V3. Selectable 3V3 or 5V0 signal output.
-
 
 ![16 Bit Register Rev 2.0](/Images/Register-Rev2.jpeg)
 
@@ -64,13 +67,15 @@ Based on my experience with the Revision 1.0 and 2.0 boards, I have designed a R
 
 * Removed power isolation relays, they are not really needed.
 
+* Removed input and output isolation diodes as they are not needed in boards where the inputs are isolated via relays and the outputs do not connect to relay coils, so backfeed to relays is not possible. I had read that backfeed was an issue with relay circuits but I went overboard and didn't think it all the way through. A version of the Rev 3.0 board with isolation relays is available in the EasyEda project in case it is needed for a specific board.
+
 * Changed ENABLE relay so that it controls the SET and CLR relays by disconnecting their GND connections.
 
 * Changed trace sizes to match the expected current loads.
 
 * Made 3V3 regulator optional.
 
-* Moved many of the passthrough jumpers to the rear of the board to save space.
+* Moved passthrough jumpers to the rear of the board where possible to save space.
 
 * Eliminated passthrough of pins 17-20 on the IDC connector (again, can be done with cabling), but added jumpers to connect 3V3 and GND to pins 19 and 20. This may be handy if using the output to directly drive a small satellite component, such as a display board.
 
