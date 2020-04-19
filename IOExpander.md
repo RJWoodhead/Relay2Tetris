@@ -56,15 +56,21 @@ Based on my experience with the Revision 1.0 boards, I have designed a Revision 
 
 * Optional pulldowns on the underside of the daughterboard on both input and output lines, which may be more convenient than the pulldowns on the mainboard.
 
+* Extra mount hole in the lower part of the board for a support standoff when stacking boards.
+
 I have not yet manufactured any Revision 2.0 boards, but the designs are contained in the EasyEda projects (links below).
+
+![IO Expander Stack](/Images/IOExp-Stack.jpg)
 
 # Board Availability
 
-Because of the minimum quantity requirements of the board manufacturer, I have extra IO Expander and Daughterboard Revision 1.0 boards that I don't need. If you want one, email me at trebor@animeigo.com. $10 gets you the mainboard and 15 daughterboards, shipped anywhere in the USA, while supplies last.
+Because of the minimum quantity requirements of the board manufacturer, I have extra IO Expander and Daughterboard Revision 1.0 boards that I don't need. If you want one, email me at trebor@animeigo.com and you can have one for cost+shipping. $10 gets you the mainboard and 15 daughterboards, shipped anywhere in the USA, while supplies last.
 
 If there is sufficient interest, I may put together a kit of parts and boards.
 
 # Resources
+
+* [Board Test Script](/HardwareTests/MCPLoopback.py)
 
 * IO Expander [EasyEda Project](https://easyeda.com/MadOverlord/rbp-io-expander) and [Gerber Files](/Gerber/IO_Expander_Rev_1.0.zip).
 

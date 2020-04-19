@@ -11,13 +11,14 @@ The goal of this project is to completely implement the HACK CPU in relay logic,
 * [Conversion of the idealized HACK CPU architecture to a physical model that addresses timing considerations](Design.md).
 * [Component-level HACK simulator](Simulator.md).
 * [40-Channel Daisy-chainable Raspberry Pi IO Expansion Board](IOExpander.md).
+* [16-Bit Register Board](Register.md).
 * [Datasheets for various hardware components](Datasheets).
+* [YouTube project playlist](https://www.youtube.com/playlist?list=PL5v_4nsiG1zsZgzh9NE4S_au2oJwVJGt1).
 
 The fleshing-out of this archive is an ongoing project; please be patient with the author.
 
 # Ongoing Projects
 
-* 16-Bit Memory Register: Revision 2.0 built and tested. Project report imminent. [Video Available](https://youtu.be/gMaYLL4p_do).
 * 16-bit Zuse Adder in design stages; 1-bit prototype built.
 
 # Still To Do
