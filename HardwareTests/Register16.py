@@ -8,9 +8,13 @@ import time
 import signal
 import sys
 
+# Sometimes it is handy to exit without cleaning up, for hardware debugging.
+
+EXIT_DIRTY = True
+
 # Clock tick time. Starts to become unreliable around 400-500hz.
 
-TICK = 1.0 / 250.0
+TICK = 5 / 250.0
 
 # Number of cycles in torture test section.
 
@@ -28,13 +32,14 @@ DATAOUT = 0x22
 
 bus = smbus.SMBus(1)    # Communications bus.
 
-# IO Expander GPIO pin hookups.
+# GPIO pin hookups - 16 GPIO on 2 boards
 
-gpio_pins = [5, 6, 16, 17, 22, 23, 24, 25]
+gpio_pins = [5, 6, 16, 17, 22, 23, 24, 25, 12, 13, 18, 19, 20, 21, 26, 27]
 
 # Register board control lines (GPIO). When using one of my IO Expander
-# boards, the GPIO lines are used for board control, so there are 8
-# possible control lines.
+# boards, the GPIO lines are used for board control. Each board has 8
+# IO lines available, in a dual-board setup you get 16. Change these
+# depending on what control lines the board being tested uses.
 
 CTL_ACTIVE = 0b00000001
 CTL_ENABLE = 0b00000010
@@ -120,6 +125,9 @@ def cleanup(signo=None, stack_frame=None):
     """
     Clean up the MCP buses and GPIO, then exit.
     """
+
+    if EXIT_DIRTY:
+        sys.exit(0)
 
     bus.write_byte_data(DATAIN0, MCP23017_IODIRA, 0xFF)
     bus.write_byte_data(DATAIN0, MCP23017_IODIRB, 0xFF)
@@ -227,7 +235,7 @@ def send_gpio(data, invert=False, pause=None, trace=True):
     bits = [bits[n] if n < len(bits) else False for n in range(len(gpio_pins))]
 
     if trace:
-        print(f'GPIO_OUT: data={data:0{len(gpio_pins)}b} invert={invert}')
+        print(f'GPIO_OUT : data={data:0{len(gpio_pins)}b} invert={invert}')
 
     if invert:
         bits = [not bit for bit in bits]

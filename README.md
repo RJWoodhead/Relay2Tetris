@@ -12,6 +12,7 @@ The goal of this project is to completely implement the HACK CPU in relay logic,
 * [Component-level HACK simulator](Simulator.md).
 * [40-Channel Daisy-chainable Raspberry Pi IO Expansion Board](IOExpander.md).
 * [16-Bit Register Board](Register.md).
+* [16-Bit Zuse Adder/Subtractor/Incrementor](ZuseAdder.md)
 * [Useful EasyEDA scripts](EasyEDA.md).
 * [Datasheets for various hardware components](Datasheets).
 * [YouTube project playlist](https://www.youtube.com/playlist?list=PL5v_4nsiG1zsZgzh9NE4S_au2oJwVJGt1).
@@ -20,9 +21,8 @@ The fleshing-out of this archive is an ongoing project; please be patient with t
 
 # Ongoing Projects
 
-* 16-bit Zuse Adder/Subtractor; 1-bit prototype built. PCB being manufactured.
-* 16-bit 8-Operation Logic Unit (AND, OR, XOR, NAND, NOR, XNOR, TRUE, FALSE). PCB designed.
-* 16-bit Zero/Not Unit (ALU component). PCB being designed.
+* 16-bit 8-Operation Logic Unit (AND, OR, XOR, NAND, NOR, XNOR, TRUE, FALSE). PCB in production.
+* 16-bit Zero/Not Unit (ALU component). PCB in production.
 
 # Still To Do
 
@@ -51,4 +51,4 @@ The complete Nand2Tetris course can be found at: https://www.nand2tetris.org/
 
 # License
 
-The materials in this repository (except for those provided by outside sources, such as the datasheets) are licensed under the [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0)](https://creativecommons.org/licenses/by-nc-sa/4.0/).
+The materials in this repository (except for those provided by outside sources) are licensed under the [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0)](https://creativecommons.org/licenses/by-nc-sa/4.0/).

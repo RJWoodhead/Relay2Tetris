@@ -72,6 +72,8 @@ If there is sufficient interest, I may put together a kit of parts and boards.
 
 * [Board Test Script](/HardwareTests/MCPLoopback.py)
 
+* [Quick GPIO Test Skeleton](/HardwareTests/GPIO.py)
+
 * IO Expander [EasyEda Project](https://easyeda.com/MadOverlord/rbp-io-expander) and [Gerber Files](/Gerber/IO_Expander_Rev_1.0.zip).
 
 * MIC2981 / Passthrough Daughterboard [EasyEda Project](https://easyeda.com/MadOverlord/io-expander-daughterboard) and [Gerber Files](/Gerber/IO_Expander_Daughterboard_Rev_1.0.zip).

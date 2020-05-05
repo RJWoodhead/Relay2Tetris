@@ -93,6 +93,6 @@ Because of the minimum quantity requirements of the board manufacturer, I have e
 
 * [Board Test Script](/HardwareTests/Register16.py).
 
-* 16 Bit Register [EasyEda Project](https://easyeda.com/MadOverlord/16-bit-register) and [Gerber Files](/Gerber/Register_Rev_2.0.zip).
+* [EasyEda Project](https://easyeda.com/MadOverlord/16-bit-register) and Gerber files for [Rev 2.0](/Gerber/Register_Rev_2.0.zip) and [Rev 3.0](/Gerber/Register_Rev_3.0.zip) boards.
 
 * Boards were manufactured by [JLCPCB](https://jlcpcb.com/). Parts were sourced from [LCSC](https://lcsc.com/) and [Digikey](https://www.digikey.com/).
