@@ -22,6 +22,6 @@ Because of the minimum quantity requirements of the board manufacturer, I have e
 
 * [Board Test Script](/HardwareTests/MuxNot.py).
 
-* [EasyEda Project](https://easyeda.com/MadOverlord/16-bit-relay-2-1-mux-not) and Gerber files for [Rev 1.0](/GerberMuxNot_Rev_1.0.zip).
+* [EasyEda Project](https://easyeda.com/MadOverlord/16-bit-relay-2-1-mux-not) and Gerber files for [Rev 1.0](/Gerber/MuxNot_Rev_1.0.zip).
 
 * Boards were manufactured by [JLCPCB](https://jlcpcb.com/). Parts were sourced from [LCSC](https://lcsc.com/) and [Digikey](https://www.digikey.com/).
