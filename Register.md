@@ -83,6 +83,8 @@ Based on my experience with the Revision 1.0 and 2.0 boards, I have designed a R
 
 I have not yet manufactured any Revision 3.0 boards, but the designs are contained in the EasyEda projects (links below). The core layout (which is actually an edge layout!) will be used in subsequent functional boards.
 
+Note: It turns out there is a design error with the ENABLE circuit in the Rev 3.0 boards that I am working on addressing. See [this note](LogicUnit.md#board-design-mistake) for more details.
+
 ![16 Bit Register Rev 2.0/3.0 Comparison](/Images/Register-Rev2-3.gif)
 
 # Board Availability

@@ -11,8 +11,10 @@ The goal of this project is to completely implement the HACK CPU in relay logic,
 * [Conversion of the idealized HACK CPU architecture to a physical model that addresses timing considerations](Design.md).
 * [Component-level HACK simulator](Simulator.md).
 * [40-Channel Daisy-chainable Raspberry Pi IO Expansion Board](IOExpander.md).
-* [16-Bit Register Board](Register.md).
-* [16-Bit Zuse Adder/Subtractor/Incrementor](ZuseAdder.md)
+* [Register Board](Register.md).
+* [Zuse Adder/Subtractor/Incrementor](ZuseAdder.md)
+* [8 Function Boolean Logic Unit](LogicUnit.md)
+* [2:1 Mux + NOT](MuxNot.md)
 * [Useful EasyEDA scripts](EasyEDA.md).
 * [Datasheets for various hardware components](Datasheets).
 * [YouTube project playlist](https://www.youtube.com/playlist?list=PL5v_4nsiG1zsZgzh9NE4S_au2oJwVJGt1).
@@ -21,12 +23,11 @@ The fleshing-out of this archive is an ongoing project; please be patient with t
 
 # Ongoing Projects
 
-* 16-bit 8-Operation Logic Unit (AND, OR, XOR, NAND, NOR, XNOR, TRUE, FALSE). PCB in production.
-* 16-bit Zero/Not Unit (ALU component). PCB in production.
+* Relay Prototype Board. PCB in production.
+* HACK Machine ALU. Being assembled.
 
 # Still To Do
 
-* ALU components.
 * Clock and Sequencer.
 * Program Counter & Branch Logic.
 * Program ROM.

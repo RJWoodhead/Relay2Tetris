@@ -12,7 +12,7 @@ But it gets better. Normally you set the inputs to the first bit of the adder to
 
 And then it gets even better than that. In binary arithmetic, A-B is equivalent to A+(~B)+1. We can already do A+B+1, so if we add a circuit that can produce ~B, the circuit can also subtract! All of this for only 5 DPDT relays per bit!
 
-![16 Bit Register Rev 1.0](/Images/ZuseAdder-Rev1.jpeg)
+![16 Bit Zuse Adder Rev 1.0](/Images/ZuseAdder-Rev1.jpeg)
 
 # Revision 1.0
 
@@ -41,6 +41,8 @@ The Revision 2.0 board design fixes the ground connection problem and adds bridg
 * Note: I created an alternate EasyEDA PCB Library entry for the B relays that included the solder jumpers. This meant they didn't have to be manually added to the schematic.
 
 I have not yet had a need to manufacture any Rev 2.0 boards.
+
+Note: It turns out there is a design error with the ENABLE circuit in the Rev 2.0 boards that I am working on addressing. See [this note](LogicUnit.md#board-design-mistake) for more details.
 
 # Board Availability
 
