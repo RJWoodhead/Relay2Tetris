@@ -20,7 +20,7 @@ I tested using the MCP23017/MIC2981 combination on a breadboard, and then built 
 
 ![Unpopulated IO Expander](/Images/IOExp-Unpopulated.jpg)
 
-This board supports two MCP23017 chips (2x16 channels) plus 8 channels of direct GPIO from the Raspberry Pi. Up to 4 boards can be daisy-chained together.
+This board supports two MCP23017 chips (2x16 channels) plus 8 channels of direct GPIO from the Raspberry Pi. Up to 4 boards can be daisy-chained together. So you can have up to 128 bits of MCP IO, plus all the usual GPIO IO.
 
 Features include:
 
@@ -60,7 +60,9 @@ Based on my experience with the Revision 1.0 boards, I have designed a Revision 
 
 I have not yet manufactured any Revision 2.0 boards, but the designs are contained in the EasyEda projects (links below).
 
-![IO Expander Stack](/Images/IOExp-Stack.jpg)
+Here is a complete "full stack" consisting of a Raspberry Pi 4 and 4 IO Expander boards. It provides 2 x 16 bit MCP outputs, 20+4 bits of GPIO output (all using the MIC2981 daughterboards so they can drive relays), and 6 x 16 bit MCP inputs.
+
+![IO Expander Stack](/Images/IOExp-Fullstack.jpg)
 
 # Board Availability
 

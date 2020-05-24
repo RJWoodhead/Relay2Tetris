@@ -1,8 +1,7 @@
 """
-Test MCP Chips on IOExpander board using loopback connection.
+Test MCP Chips using loopback connection.
 
-Typically, the MCPs on the board are connected via a loopback connection.
-Any GPIO lines are cross-connected.
+Tests direct-connected MCP chips and/or grouped GPIO pins.
 """
 
 import RPi.GPIO as GPIO
@@ -15,73 +14,34 @@ import sys
 
 TRACE = True
 
-# Available tests.
+# GPIO pin hookups - 16 GPIO on 2 boards.
 
-MCP0TO1 = 0  # Send from first MCP to second one.
-MCP1TO0 = 1  # Send from second MPC to first one.
-RBPPINS = 2  # Send between RBP GPIO pins.
+GPIO_PINS = [5, 6, 16, 17, 22, 23, 24, 25, 12, 13, 18, 19, 20, 21, 26, 27]
 
-# Test command tuple: Command, BoardMCP0 address, BoardMCP1 address
-# Standard MCP address pairs are 0x20-21, 22-23, 24-25, 26-27.
+# List of tests to perform. Each test is a tuple that lists the source
+# and destination devices. If a tuple element is an integer, it is the
+# MCP device address; if it is a list, it is a set of GPIO pins.
 #
-# Some common test configurations are defined below.
+# In this instance, we are testing sending from GPIO pins to a MCP input.
 
-# Basic 1st Board test, also testing GPIO pins.
-
-TESTS = [(MCP0TO1, 0x20, 0x21),
-         (MCP1TO0, 0x20, 0x21),
-         (RBPPINS, None, None)]
-
-"""
-# 2nd Board Test, no GPIO pins.
-
-TESTS = [(MCP0TO1, 0x22, 0x23),
-         (MCP1TO0, 0x22, 0x23)]
-
-# 3nd Board Test, no GPIO pins.
-
-TESTS = [(MCP0TO1, 0x24, 0x25),
-         (MCP1TO0, 0x24, 0x25)]
-
-# 4th Board Test, no GPIO pins.
-
-TESTS = [(MCP0TO1, 0x26, 0x27),
-         (MCP1TO0, 0x26, 0x27)]
-
-# Dual Board Test, sending from one board to the other.
-
-TESTS = [(MCP0TO1, 0x20, 0x22),
-         (MCP0TO1, 0x21, 0x23)]
-
-"""
+TESTS = [(GPIO_PINS, 0x27)]
 
 # Extract addresses of MCPs used for test.
 
-MCPs = set([item for test in TESTS for item in test if item and item >= 0x20])
+MCPs = set([item for test in TESTS for item in test if type(item) is not list])
 
 # MCP can send/receive on 16 data lines. GPIOA0-7 are the least
 # significant bits; GPIOB0-7 are the most significant bits. In a
 # simple connection between the two MCPs, each pin will be
 # connected to the same pin of each MCP, but since your mileage
 # may vary, a table of pin-pairs is used to specify which pin
-# connects to which. When sending in reverse, these pins are
-# swapped.
+# connects to which.
 
 MCP_PINS = [(x, x) for x in range(16)]
 
 # Handy to have a table of 16-bit binary values for the above.
 
 MCP_BITS = [(1 << x, 1 << y) for x, y in MCP_PINS]
-
-# We also do the same thing for the GPIO pins; since we have 8 pins
-# that's 4 pairs. These are the defaults if you use the lowest-
-# numbered set of general-purpose GPIO pins on the RBP.
-
-RBP_PINS = [(5, 6), (16, 17), (22, 23), (24, 25)]
-
-# Also handy to have a flat list of all the RBP pins.
-
-RBP_ALLPINS = [pin for pins in RBP_PINS for pin in pins]
 
 # How long do we wait for the data to settle down? As it happens,
 # a SETTLE of 0.0 will work fine with pulldown on the data lines
@@ -130,31 +90,30 @@ def cleanup(signo=None, stack_frame=None):
         bus.write_byte_data(mcp, MCP23017_IODIRA, 0xFF)
         bus.write_byte_data(mcp, MCP23017_IODIRB, 0xFF)
 
-    GPIO.setup(RBP_ALLPINS, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+    GPIO.setup(GPIO_PINS, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 
     print("\n")
     sys.exit(0)
 
 
-def test_MCP_pin(MCPs, pins, bits, swap, trace=False):
+def test_pin(sender, receiver, pins, bits, trace=False):
     """
-    Test MCP by sending data from one chip to the other. If swap is
-    True, swap the sender & receiver and their respective pins.
+    Test devices by sending data from one to the other.
     """
 
-    sender, receiver = MCPs
     out_pin, in_pin = pins
     out_data, in_data = bits
 
-    if swap:
-        out_pin, in_pin = in_pin, out_pin
-        out_data, in_data = in_data, out_data
-        sender, receiver = receiver, sender
-
     # Write the individual bytes.
 
-    bus.write_byte_data(sender, MCP23017_GPIOA, out_data & 0xFF)
-    bus.write_byte_data(sender, MCP23017_GPIOB, out_data >> 8)
+    if type(sender) is list:
+        bits = [c == '1' for c in bin(out_data)[2:]]
+        bits.reverse()
+        bits = [bits[n] if n < len(bits) else False for n in range(len(GPIO_PINS))]
+        GPIO.output(GPIO_PINS, bits)
+    else:
+        bus.write_byte_data(sender, MCP23017_GPIOA, out_data & 0xFF)
+        bus.write_byte_data(sender, MCP23017_GPIOB, out_data >> 8)
 
     # Give time for results to settle.
 
@@ -162,96 +121,59 @@ def test_MCP_pin(MCPs, pins, bits, swap, trace=False):
 
     # Read the data from the other device.
 
-    lsb = bus.read_byte_data(receiver, MCP23017_GPIOA)
-    msb = bus.read_byte_data(receiver, MCP23017_GPIOB)
+    if type(receiver) is list:
+        results = 0
+        for pin in GPIO_PINS[::-1]:
+            results = results + results + GPIO.input(pin)
+    else:
+        lsb = bus.read_byte_data(receiver, MCP23017_GPIOA)
+        msb = bus.read_byte_data(receiver, MCP23017_GPIOB)
 
-    results = (msb << 8) + lsb
+        results = (msb << 8) + lsb
 
     if in_data != results:
-        print(f' Error: MCP[{sender:02x}] -> MCP[{receiver:02x}]: Pin {out_pin:2} -> {in_pin:2}: Wrote {out_data:016b}, received {results:016b}, expected {in_data:016b}.')
+        print(f' Error: Pin {out_pin:2} -> {in_pin:2}: Wrote {out_data:016b}, received {results:016b}, expected {in_data:016b}.')
     elif trace:
-        print(f'    OK: MCP[{sender:02x}] -> MCP[{receiver:02x}]: Pin {out_pin:2} -> {in_pin:2}: Wrote {out_data:016b}, received {results:016b}, expected {in_data:016b}.')
-
-    # Check RBP GPIO input lines to see if there is any leakage, just out of paranoia.
-
-    gpio_data = [GPIO.input(pin) for pin in RBP_ALLPINS]
-    gpio_leak = [pin for bit, pin in zip(gpio_data, RBP_ALLPINS) if bit != GPIO.LOW]
-
-    if gpio_leak:
-        print(f' NOTE: MCP[{sender:02x}] -> MCP[{receiver:02x}]: Wrote {out_data:016b}, leaked to RBP GPIO pins {gpio_leak}.')
+        print(f'    OK: Pin {out_pin:2} -> {in_pin:2}: Wrote {out_data:016b}, received {results:016b}, expected {in_data:016b}.')
 
     return in_data == results
 
 
-def test_MCP_pair(MCPs, swap, trace=False):
+def test_loopback(sender, receiver, trace=True):
     """
-    Test connection between MCP chips. If swap == True, swap sender & receiver devices.
+    Test connection between two devices
     """
-
-    sender, receiver = MCPs
-
-    if swap:
-        sender, receiver = receiver, sender
-
-    print(f'Testing MCP[{sender:02x}] -> MCP[{receiver:02x}]...')
 
     # Configure sender for writing.
 
-    bus.write_byte_data(sender, MCP23017_IODIRA, 0x00)
-    bus.write_byte_data(sender, MCP23017_IODIRB, 0x00)
+    if type(sender) is list:
+        if type(receiver) is list:
+            print('Error: GPIO -> GPIO test not supported!')
+            return
+        print(f'Testing GPIO -> MCP {receiver:02x}...')
+        GPIO.setup(sender, GPIO.OUT, initial=GPIO.LOW)
+        bus_width = len(sender)
+    else:
+        bus.write_byte_data(sender, MCP23017_IODIRA, 0x00)
+        bus.write_byte_data(sender, MCP23017_IODIRB, 0x00)
+        bus_width = len(MCP_PINS)
 
     # Configure receiver for reading.
 
-    bus.write_byte_data(receiver, MCP23017_IODIRA, 0xFF)
-    bus.write_byte_data(receiver, MCP23017_IODIRB, 0xFF)
-    bus.write_byte_data(receiver, MCP23017_GPPUA, 0x00)
-    bus.write_byte_data(receiver, MCP23017_GPPUB, 0x00)
+    if type(receiver) is list:
+        print(f'Testing MCP {sender:02x} -> GPIO...')
+        GPIO.setup(receiver, GPIO.IN, initial=GPIO.LOW)
+    else:
+        if type(sender) is not list:
+            print(f'Testing MCP {sender:02x} -> MCP {receiver:02x}...')
+        bus.write_byte_data(receiver, MCP23017_IODIRA, 0xFF)
+        bus.write_byte_data(receiver, MCP23017_IODIRB, 0xFF)
+        bus.write_byte_data(receiver, MCP23017_GPPUA, 0x00)
+        bus.write_byte_data(receiver, MCP23017_GPPUB, 0x00)
 
     passed = True
-    for i in range(len(MCP_PINS)):
-        passed = test_MCP_pin(MCPs, MCP_PINS[i], MCP_BITS[i], swap, trace) and passed
-
-    print(f'Passed!' if passed else f'** FAILED **')
-
-
-def test_RBP_GPIO(trace=False):
-    """
-    Test RBP GPIO loopback.
-    """
-
-    print(f'Testing RBP GPIO...')
-
-    passed = True
-
-    # For each pair of pins and direction.
-
-    for pin_a, pin_b in RBP_PINS:
-        for swap in [False, True]:
-
-            if swap:
-                pin_a, pin_b = pin_b, pin_a
-
-            # Write pin_a, read all others.
-
-            otherpins = [pin for pin in RBP_ALLPINS if pin != pin_a]
-
-            GPIO.setup(otherpins, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-            GPIO.setup(pin_a, GPIO.OUT, initial=GPIO.HIGH)
-
-            # Give time for results to settle.
-
-            time.sleep(SETTLE)
-
-            # Read the state of all the input pins, and filter out the high bits
-
-            gpio_data = [(pin, GPIO.input(pin)) for pin in otherpins]
-            gpio_data = [data for data in gpio_data if data[1] != GPIO.LOW]
-
-            if len(gpio_data) != 1 or gpio_data[0][0] != pin_b:
-                passed = False
-                print(f' Error: GPIO set pin {pin_a}, expected data on {pin_b}, received data on {[pin for pin, data in gpio_data]}.')
-            elif trace:
-                print(f'    OK: GPIO set pin {pin_a}, expected data on {pin_b}, received data on {[pin for pin, data in gpio_data]}.')
+    for i in range(bus_width):
+        passed = test_pin(sender, receiver, MCP_PINS[i], MCP_BITS[i], trace) and passed
 
     print(f'Passed!' if passed else f'** FAILED **')
 
@@ -270,7 +192,7 @@ for mcp in MCPs:
 
 GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
-GPIO.setup(RBP_ALLPINS, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+GPIO.setup(GPIO_PINS, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 
 # Configure for cleanup on program termination.
 
@@ -279,14 +201,7 @@ signal.signal(signal.SIGTERM, cleanup)
 
 # Perform tests.
 
-for test, mcp0, mcp1 in TESTS:
-    if test == MCP0TO1:
-        test_MCP_pair([mcp0, mcp1], False, TRACE)
-    elif test == MCP1TO0:
-        test_MCP_pair([mcp0, mcp1], True, TRACE)
-    elif test == RBPPINS:
-        test_RBP_GPIO(TRACE)
-    else:
-        print(f'Error: Unknown test type [{test}].')
+for sender, receiver in TESTS:
+    test_loopback(sender, receiver)
 
 cleanup()
