@@ -62,6 +62,18 @@ I have not yet manufactured any Revision 2.0 boards, but the designs are contain
 
 Here is a complete "full stack" consisting of a Raspberry Pi 4 and 4 IO Expander boards. It provides 2 x 16 bit MCP outputs, 20+4 bits of GPIO output (all using the MIC2981 daughterboards so they can drive relays), and 6 x 16 bit MCP inputs.
 
+# Voltage Dividing Daughterboard
+
+As part of [The War on Voltage Drop](Voltage.md), I needed a way to convert 12V0 signals from the PCBs down to 3V3 so they could be safely read by the MCP chips. I did this with a simple voltage 8-channel voltage divider circuit (currently being produced after I hand-made one). Links to the project and Gerber files below.
+
+The PC power supply I am using delivers about 11.4 volts on its 12V0 output.
+
+In turn, the MIC2981 drivers output about 9.9v when given this input when under load. This is enough to drive relays on a board, as they have a must-operate voltage of 80% = 9.6v. However, it is something to be aware of in more
+stressful situations. The solution will be to increase the supply voltage to the B side of the 2981s on the IO Expander board to ~14v. 2981s can accept up to 50v, so there's no problem there. The relays can tolerate 150% of rated voltage, so giving them 15-2=13v should not be a problem.
+
+Using the Rev 4.0 register board, with input voltage of 11.4v, the output voltage at the data connector is 11.37, almost no drop. After the voltage divider, we are down to 3.17v, which is more than enough; the MCPs will reliably
+read data to about 55-60% of the 3v3 nominal voltage.
+
 ![IO Expander Stack](/Images/IOExp-Fullstack.jpg)
 
 # Board Availability
@@ -76,8 +88,12 @@ If there is sufficient interest, I may put together a kit of parts and boards.
 
 * [Quick GPIO Test Skeleton](/HardwareTests/GPIO.py)
 
-* IO Expander [EasyEda Project](https://easyeda.com/MadOverlord/rbp-io-expander) and [Gerber Files](/Gerber/IO_Expander_Rev_1.0.zip).
+* IO Expander [EasyEda Project](https://easyeda.com/MadOverlord/rbp-io-expander) and Gerber Files for [Rev 1.0](/Gerber/IO_Expander_Rev_1.0.zip) and [Rev 2.0](/Gerber/IO_Expander_Rev_2.0.zip) and [BOM](/BOMs/IO_Expander_Rev_2.0.zip).
 
-* MIC2981 / Passthrough Daughterboard [EasyEda Project](https://easyeda.com/MadOverlord/io-expander-daughterboard) and [Gerber Files](/Gerber/IO_Expander_Daughterboard_Rev_1.0.zip).
+* MIC2981 / Passthrough Daughterboard [EasyEda Project](https://easyeda.com/MadOverlord/io-expander-daughterboard), [Gerber Files](/Gerber/IO_Expander_Daughterboard_Rev_1.0.zip) and
+[BOM](/BOMs/IO_Expander_Daughterboard_Rev_1.0.zip).
+
+* Voltage Drop Daughterboard [EasyEda Project](https://easyeda.com/MadOverlord/io-expander-voltage-divider-daughterboard), [Gerber Files](/Gerber/IO_Expander_Voltage_Drop_Rev_1.0.zip) and
+[BOM](/BOMs/IO_Expander_Voltage_Drop_Rev_1.0.zip)..
 
 * Boards were manufactured by [JLCPCB](https://jlcpcb.com/). Parts were sourced from [LCSC](https://lcsc.com/) and [Digikey](https://www.digikey.com/).

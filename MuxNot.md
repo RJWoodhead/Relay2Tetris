@@ -1,5 +1,7 @@
 # 2:1 Mux + NOT Board
 
+Note: Please read [The War on Voltage Drop](Voltage.md) for context on the revision history of the PCB boards.
+
 This board is pretty simple. It consists of a 2:1 input multiplexer connected to a NOT unit.
 
 ![16 Bit Mux + Not 1.0](/Images/MuxNot.jpg)
@@ -14,6 +16,12 @@ A short video showing the Revision 1.0 board being tested is available on [YouTu
 
 Note: It turns out there is a design error with the ENABLE circuit in this board that I am working on addressing. See [this note](LogicUnit.md#board-design-mistake) for more details. The temporary workaround is to jumper the board so it is always ENABLEd.
 
+# Revision 2.0
+
+Revision 2.0 of the board incorporates all of the lessons learned during the War on Voltage Drop. In addition, the unused space on the board has been filled with a relay breadboard that may come in handy.
+
+This board is currently being manufactured.
+
 # Board Availability
 
 Because of the minimum quantity requirements of the board manufacturer, I have extra Revision 1.0 boards that I don't need. If you want one, email me at trebor@animeigo.com and you can have one for cost+shipping. $10 gets you a board, shipped anywhere in the USA, while supplies last.
@@ -22,6 +30,6 @@ Because of the minimum quantity requirements of the board manufacturer, I have e
 
 * [Board Test Script](/HardwareTests/MuxNot.py).
 
-* [EasyEda Project](https://easyeda.com/MadOverlord/16-bit-relay-2-1-mux-not) and Gerber files for [Rev 1.0](/Gerber/MuxNot_Rev_1.0.zip).
+* [EasyEda Project](https://easyeda.com/MadOverlord/16-bit-relay-2-1-mux-not), [Gerber Files](/Gerber/MuxNot_Rev_2.0.zip) and [BOM](/Gerber/MuxNot_Rev_2.0.zip) for Rev 2.0 boards.
 
 * Boards were manufactured by [JLCPCB](https://jlcpcb.com/). Parts were sourced from [LCSC](https://lcsc.com/) and [Digikey](https://www.digikey.com/).

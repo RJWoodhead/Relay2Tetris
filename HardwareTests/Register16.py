@@ -1,5 +1,5 @@
 """
-Simple 16 Bit Register board test.
+Simple 16 Bit Register board test - for Rev 4.0 boards.
 """
 
 import RPi.GPIO as GPIO
@@ -10,25 +10,28 @@ import sys
 
 # Sometimes it is handy to exit without cleaning up, for hardware debugging.
 
-EXIT_DIRTY = True
+EXIT_DIRTY = False
 
 # Clock tick time. Starts to become unreliable around 400-500hz.
 
-TICK = 5 / 250.0
+TICK = 0.005
+
+# Delay between reads when debouncing board outputs; None = do not debounce.
+
+DEBOUNCE = 0.002
 
 # Number of cycles in torture test section.
 
 TORTURE = 25
 
-# Is MUX present?
-
-MUXPRESENT = False
-
 # IO Expander Port assignments.
 
-DATAIN0 = 0x20
-DATAIN1 = 0x21
-DATAOUT = 0x22
+DATAIN0 = 0x20  # Main data input to board (value to store)
+DATAIN1 = 0x21  # Alt data input to board (value to store if MUX enabled)
+DATAOUT = 0x22  # Data output from board (16 bits)
+DATACND = 0x23  # Condition codes output from board (None to disable)
+
+ACTIVE_PORTS = [port for port in [DATAIN0, DATAIN1, DATAOUT, DATACND] if port is not None]
 
 bus = smbus.SMBus(1)    # Communications bus.
 
@@ -41,35 +44,37 @@ gpio_pins = [5, 6, 16, 17, 22, 23, 24, 25, 12, 13, 18, 19, 20, 21, 26, 27]
 # IO lines available, in a dual-board setup you get 16. Change these
 # depending on what control lines the board being tested uses.
 
-CTL_ACTIVE = 0b00000001
-CTL_ENABLE = 0b00000010
-CTL_MUX = 0b00000100
-CTL_SET = 0b00001000
-CTL_CLR = 0b00010000
 
-# Handy to have all the control signals together.
+CTL_ENABLE = 0b00000001  # Enable register for CLR/SET
+CTL_RESET = 0b000000010  # Reset register to 0 even if ENABLE = True
+CTL_CLR = 0b00000000100  # Clear bits not present on input (release Hold relays)
+CTL_SET = 0b00000001000  # Set bits present on input (activate Hold relays)
+CTL_MUX = 0b00000010000  # Select input port. Set to 0 if no MUX installed
 
-CTL_ALL = CTL_ACTIVE | CTL_ENABLE | CTL_SET | CTL_CLR | CTL_MUX
+# Note that the register can do AND and OR operations. First, you load the
+# first value via ENABLE|SET|CLR, ENABLE|SET, ENABLE. Then, after putting
+# the next value on the bus, you can ENABLE|SET, ENABLE to OR or ENABLE|CLR,
+# ENABLE to AND.
+
+CTL_ALL = CTL_RESET | CTL_ENABLE | CTL_SET | CTL_CLR | CTL_MUX
+CTL_NONE = 0b00000000
 
 # The sequence of control operations in a store operation. Note that
 # the output value does not become stable until the end of the final
-# CTL_ACTIVE cycle. The register needs a tick after CTL_SET
-# goes down before it becomes reliably valid. I don't quite understand
-# what is going on here, because halving the clock rate doesn't remove
-# the need for the sub-tick.
+# cycle.
 #
 # This sequence does not include MUX operations.
 
-SEQUENCE = [(TICK, CTL_ACTIVE | CTL_ENABLE),
-            (TICK, CTL_ACTIVE | CTL_ENABLE | CTL_SET | CTL_CLR),
-            (TICK, CTL_ACTIVE | CTL_ENABLE | CTL_SET | CTL_CLR),
-            (TICK, CTL_ACTIVE | CTL_ENABLE | CTL_SET),
-            (TICK, CTL_ACTIVE | CTL_ENABLE | CTL_SET),
-            (TICK, CTL_ACTIVE)]
+SEQUENCE = [(TICK, CTL_NONE),
+            (TICK, CTL_ENABLE | CTL_SET | CTL_CLR),
+            (TICK, CTL_ENABLE | CTL_SET | CTL_CLR),
+            (TICK, CTL_ENABLE | CTL_SET),
+            (TICK, CTL_ENABLE | CTL_SET),
+            (TICK, CTL_NONE)]
 
 # MUX-enabled version of SEQUENCE.
 
-SEQUENCE_MUX = [(tick, bits | CTL_MUX) if bits != CTL_ACTIVE else (tick, bits) for (tick, bits) in SEQUENCE]
+SEQUENCE_MUX = [(tick, bits | CTL_MUX if bits != CTL_NONE else 0) for (tick, bits) in SEQUENCE]
 
 # Basic test patterns for the torture test.
 
@@ -113,7 +118,7 @@ MCP23017_OLATB = 0x15
 
 def sleep(duration):
     """
-    A hopefully reasonably accurate sleep function that we can check if needed.
+    A hopefully reasonably accurate sleep function.
     """
 
     elapsed = time.clock_gettime(time.CLOCK_MONOTONIC_RAW)
@@ -129,12 +134,9 @@ def cleanup(signo=None, stack_frame=None):
     if EXIT_DIRTY:
         sys.exit(0)
 
-    bus.write_byte_data(DATAIN0, MCP23017_IODIRA, 0xFF)
-    bus.write_byte_data(DATAIN0, MCP23017_IODIRB, 0xFF)
-
-    if MUXPRESENT:
-        bus.write_byte_data(DATAIN1, MCP23017_IODIRA, 0xFF)
-        bus.write_byte_data(DATAIN1, MCP23017_IODIRB, 0xFF)
+    for port in ACTIVE_PORTS:
+        bus.write_byte_data(port, MCP23017_IODIRA, 0xFF)
+        bus.write_byte_data(port, MCP23017_IODIRB, 0xFF)
 
     GPIO.setup(gpio_pins, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 
@@ -150,33 +152,34 @@ def configure_bus():
     Configure the MCP registers to default values.
     """
 
-    for addr in range(22):
-        bus.write_byte_data(DATAOUT, addr, 0xFF if addr == 0 or addr == 1 else 0x00)
-        bus.write_byte_data(DATAIN0, addr, 0xFF if addr == 0 or addr == 1 else 0x00)
-        if MUXPRESENT:
-            bus.write_byte_data(DATAIN1, addr, 0xFF if addr == 0 or addr == 1 else 0x00)
+    # Reset to defaults, set ports to input.
+
+    for port in ACTIVE_PORTS:
+        for addr in range(22):
+            bus.write_byte_data(port, addr, 0xFF if addr <= 1 else 0x00)
 
     # Set _WRITE pins to output.
 
-    bus.write_byte_data(DATAIN0, MCP23017_IODIRA, 0x00)
-    bus.write_byte_data(DATAIN0, MCP23017_IODIRB, 0x00)
+    if DATAIN0 is not None:
+        bus.write_byte_data(DATAIN0, MCP23017_IODIRA, 0x00)
+        bus.write_byte_data(DATAIN0, MCP23017_IODIRB, 0x00)
 
-    if MUXPRESENT:
+    if DATAIN1 is not None:
         bus.write_byte_data(DATAIN1, MCP23017_IODIRA, 0x00)
         bus.write_byte_data(DATAIN1, MCP23017_IODIRB, 0x00)
 
-    # Set _READ pins to input.
+    # Disable pullup on read pins.
 
-    bus.write_byte_data(DATAOUT, MCP23017_IODIRA, 0xFF)
-    bus.write_byte_data(DATAOUT, MCP23017_IODIRB, 0xFF)
+    if DATAOUT is not None:
+        bus.write_byte_data(DATAOUT, MCP23017_GPPUA, 0x00)
+        bus.write_byte_data(DATAOUT, MCP23017_GPPUB, 0x00)
 
-    # Disable pullup on _READ pins (we have external pulldown if needed on the board).
+    if DATACND is not None:
+        bus.write_byte_data(DATACND, MCP23017_GPPUA, 0x00)
+        bus.write_byte_data(DATACND, MCP23017_GPPUB, 0x00)
 
-    bus.write_byte_data(DATAOUT, MCP23017_GPPUA, 0x00)
-    bus.write_byte_data(DATAOUT, MCP23017_GPPUB, 0x00)
 
-
-def send_bus(device, data, invert=False, pause=None, trace=True):
+def send_bus(device, data, invert=False, settle=None, trace=True):
     """
     Write 16 bits of data to a MCP device.
     """
@@ -185,9 +188,9 @@ def send_bus(device, data, invert=False, pause=None, trace=True):
     hi = data // 256
 
     if trace:
-        print(f'DATA_OUT: device={device:02x} hi={hi:08b} lo={lo:08b} invert={invert}')
+        print(f'DATA_OUT : device={device:02x} hi={hi:08b} lo={lo:08b} invert={invert}')
 
-    # Note: Signals must be inverted to control common relay boards.
+    # Note: Signals must be inverted to control some relay boards (not mine, though).
 
     xor = 0xFF if invert else 0x00
 
@@ -196,8 +199,8 @@ def send_bus(device, data, invert=False, pause=None, trace=True):
 
     # Give time for results to settle.
 
-    if pause is not None:
-        sleep(pause)
+    if settle is not None:
+        sleep(settle)
 
 
 def get_bus(device, trace=True):
@@ -208,8 +211,17 @@ def get_bus(device, trace=True):
     lo_in = bus.read_byte_data(device, MCP23017_GPIOA)
     hi_in = bus.read_byte_data(device, MCP23017_GPIOB)
 
+    # Debounce input
+
+    lo_in2, hi_in2 = lo_in + 1, hi_in + 1
+    while (lo_in != lo_in2) or (hi_in != hi_in2):
+        lo_in2, hi_in2 = lo_in, hi_in
+        sleep(DEBOUNCE)
+        lo_in = bus.read_byte_data(device, MCP23017_GPIOA)
+        hi_in = bus.read_byte_data(device, MCP23017_GPIOB)
+
     if trace:
-        print(f'DATA_IN:  device={device:02x} hi={hi_in:08b} lo={lo_in:08b}')
+        print(f'DATA_IN  : device={device:02x} hi={hi_in:08b} lo={lo_in:08b}')
 
     return 256*hi_in + lo_in
 
@@ -225,7 +237,7 @@ def configure_gpio():
     GPIO.setup(gpio_pins, GPIO.OUT, initial=GPIO.LOW)
 
 
-def send_gpio(data, invert=False, pause=None, trace=True):
+def send_gpio(data, invert=False, settle=None, trace=True):
     """
     Send 1..N bits of data to the N defined GPIO pins.
     """
@@ -244,8 +256,8 @@ def send_gpio(data, invert=False, pause=None, trace=True):
 
     # Give time for results to settle.
 
-    if pause is not None:
-        sleep(pause)
+    if settle is not None:
+        sleep(settle)
 
 
 def signal_test():
@@ -265,10 +277,10 @@ def signal_test():
 
     # Change this to change the data pattern being sent out.
 
-    send_bus(DATAIN0, 0xFFFF, invert=False, pause=None, trace=False)
-    if MUXPRESENT:
-        send_bus(DATAIN1, 0xFFFF, invert=False, pause=None, trace=False)
-    send_gpio(CTL_ALL, invert=False, pause=None, trace=False)
+    send_bus(DATAIN0, 0xFFFF, invert=False, settle=None, trace=False)
+    if DATAIN1 is not None:
+        send_bus(DATAIN1, 0xFFFF, invert=False, settle=None, trace=False)
+    send_gpio(CTL_ALL, invert=False, settle=None, trace=False)
 
     # Wait until exited by user.
 
@@ -278,39 +290,54 @@ def signal_test():
         sleep(1)
 
 
+def condition_codes(value):
+    """
+    Computes the condition codes for any register value. Will vary depending on how you have things wired up.
+    """
+
+    return sum([0b0010 if value == 0 else 0,       # register is zero
+                0b1000 if value > 32767 else 0,    # negative
+                0b0100 if value == 65535 else 0])  # all ones
+
+
 def test_register_mux(data0, data1, sequence, expected, trace=True, subtrace=False):
     """
     Test the register. Set the data line(s), send the control sequence, and
     check to see if the expected data appears on the output lines.
     """
 
+    expected_conditions = condition_codes(expected) if DATACND is not None else 0
+
     if trace:
-        print(f'REG_OUT:  data0={data0:016b}, data1={data1:016b}, expected={expected:016b}')
+        print(f'REG_OUT: data0={data0:016b}, data1={data1:016b}, expected={expected:016b}:{expected_conditions:04b}')
 
     # Set up output lines.
 
-    send_bus(DATAIN0, data0, invert=False, pause=None, trace=subtrace)
+    send_bus(DATAIN0, data0, invert=False, settle=None, trace=subtrace)
 
-    if MUXPRESENT:
-        send_bus(DATAIN1, data1, invert=False, pause=None, trace=subtrace)
+    if DATAIN1 is not None:
+        send_bus(DATAIN1, data1, invert=False, settle=None, trace=subtrace)
 
     # Send command sequence with individual settle times.
 
     for settle, control_lines in sequence:
         if trace:
             output = get_bus(DATAOUT, trace=subtrace)
-            print(f'Control={control_lines}, Settle={settle}, REG_VAL=data={output:016b}')
-        send_gpio(control_lines, invert=False, pause=settle, trace=subtrace)
+            conditions = get_bus(DATACND, trace=subtrace) if DATACND is not None else 0
+            print(f'Control={control_lines}, Settle={settle}, OUTPUT={output:016b}:{conditions:04b}')
+
+        send_gpio(control_lines, invert=False, settle=settle, trace=subtrace)
 
     # Check if output == expected.
 
     output = get_bus(DATAOUT, trace=subtrace)
+    conditions = get_bus(DATACND, trace=subtrace) if DATACND is not None else 0
 
     if trace:
-        print(f'REG_VAL:  data={output:016b}')
+        print(f'REG_VAL: data={output:016b}')
 
-    if output != expected:
-        print(f'Error:  data0={data0:016b}, data1={data1:016b}, expected={expected:016b}, result={output:016b}')
+    if output != expected or conditions != expected_conditions:
+        print(f'Error:  data0={data0:016b}, data1={data1:016b}, expected={expected:016b}:{expected_conditions:04b}, result={output:016b}:{conditions:04b}')
 
     return output == expected
 
@@ -326,17 +353,56 @@ def test_register(data, trace=False, subtrace=False):
 
     results = test_register_mux(data, antidata, SEQUENCE, data, trace, subtrace)
 
-    if MUXPRESENT:
+    if DATAIN1 is not None:
         test_register_mux(antidata, data, SEQUENCE_MUX, data, trace, subtrace) and results
 
     return results
+
+
+def reset_test():
+    """
+    Optional test to explore behavior of the reset signal. In the Revision 4.0
+    board, RESET doesn't work if SET is also raised.
+    """
+
+    test_register_mux(0xFFFF, 0x000, SEQUENCE, 0xFFFF, False, False)
+
+    sleep(1)
+
+    send_gpio(CTL_RESET)
+
+    sleep(1)
+
+    test_register_mux(0xFFFF, 0xFFFF, SEQUENCE, 0xFFFF, False, False)
+
+    sleep(1)
+
+    send_gpio(CTL_RESET | CTL_ENABLE)
+
+    sleep(1)
+
+    test_register_mux(0xFFFF, 0xFFFF, SEQUENCE, 0xFFFF, False, False)
+
+    sleep(1)
+
+    send_gpio(CTL_RESET | CTL_SET)
+    sleep(1)
+
+    test_register_mux(0xFFFF, 0xFFFF, SEQUENCE, 0xFFFF, False, False)
+
+    sleep(1)
+
+    send_gpio(CTL_RESET | CTL_ENABLE | CTL_SET)
+
+    while True:
+        sleep(1)
 
 
 """
 Main Program
 """
 
-print(f'Testing 16 bit register...')
+print(f'Testing 16 bit register (Revision 4.0)...')
 
 signal.signal(signal.SIGINT, cleanup)
 signal.signal(signal.SIGTERM, cleanup)
@@ -350,6 +416,10 @@ results = (0, 0)
 # Useful for doing multimeter level checks.
 
 # signal_test()
+
+# Test of reset functionality.
+
+# reset_test()
 
 # Basic tests.
 

@@ -1,5 +1,5 @@
 """
-16 Bit Zuse Adder/Subtractor board test.
+16 Bit Zuse Adder/Subtractor board test. Updated for Revision 2.0
 """
 
 import RPi.GPIO as GPIO
@@ -48,15 +48,15 @@ gpio_pins = [5, 6, 16, 17, 22, 23, 24, 25, 12, 13, 18, 19, 20, 21, 26, 27]
 # IO lines available, in a dual-board setup you get 16. Change these
 # depending on what control lines the board being tested uses.
 
-CTL_ENABLE = 0b0000000100000000
-CTL_SUB = 0b0000001000000000
+CTL_ENABLE = 0b00000000  # Revision 2.0 board has no ENABLE, just SUB
+CTL_SUB = 0b0000001
 
 # Handy to have all the control signals together.
 
 CTL_ALL = CTL_ENABLE | CTL_SUB
 
 # Sequence of control operations. In the case of the adder board, if
-# it's enabled, it's generating output, so there is only one element.
+# it's powered, it's generating output, so there is only one element.
 
 SEQUENCE = [(TICK, CTL_ENABLE)]
 
@@ -371,17 +371,18 @@ if not test_zuse(BIT_MASK, BIT_MASK, trace=True, subtrace=False):
 print('')
 
 if not IS_INCREMENTOR:
-    for b in range(BITS_POPULATED):
-        bit = 1 << b
-        if not test_zuse(bit, 0, trace=True, subtrace=False):
-            cleanup()
-        print('')
-        if not test_zuse(0, bit, trace=True, subtrace=False):
-            cleanup()
-        print('')
-        if not test_zuse(bit, bit, trace=True, subtrace=False):
-            cleanup()
-        print('')
+    for bits in [1, 3, 7, 15, 31, 63, 127, 255]:
+        for b in range(BITS_POPULATED):
+            bit = bits << b
+            if not test_zuse(bit, 0, trace=True, subtrace=False):
+                cleanup()
+            print('')
+            if not test_zuse(0, bit, trace=True, subtrace=False):
+                cleanup()
+            print('')
+            if not test_zuse(bit, bit, trace=True, subtrace=False):
+                cleanup()
+            print('')
 else:
     for i in range(0, BIT_MASK):
         if not test_zuse(i, 0, trace=True, subtrace=False):

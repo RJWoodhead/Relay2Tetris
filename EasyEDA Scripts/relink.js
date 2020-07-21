@@ -35,7 +35,7 @@ function relink(json, obj, owner) {
 
         for (id in obj.TRACK) {
             item = obj.TRACK[id];
-            if (item.net != "" && (item.layerid == layer || item.layerid == 11 || layer == 11)) {
+            if (item.net != "" && item.net != "null" && item.net !== null && (item.layerid == layer || item.layerid == 11 || layer == 11)) {
                 for (point of item.pointArr) {
                     if (Math.abs(point.x-x) < TOLERANCE && Math.abs(point.y-y) < TOLERANCE) {
                         return item.net;
@@ -46,7 +46,7 @@ function relink(json, obj, owner) {
 
         for (id in obj.VIA) {
             item = obj.VIA[id];
-            if (item.net != "" && (item.layerid == layer || item.layerid == 11 || layer == 11)) {
+            if (item.net != "" && item.net != "null" && item.net !== null && (item.layerid == layer || item.layerid == 11 || layer == 11)) {
                 if (Math.abs(item.x-x) < TOLERANCE && Math.abs(item.y-y) < TOLERANCE) {
                     return item.net;
                 }
@@ -55,7 +55,7 @@ function relink(json, obj, owner) {
 
         for (id in obj.PAD) {
             item = obj.PAD[id];
-            if (item.net != "" && (item.layerid == layer || item.layerid == 11 || layer == 11)) {
+            if (item.net != "" && item.net != "null" && item.net !== null && (item.layerid == layer || item.layerid == 11 || layer == 11)) {
                 if (Math.abs(item.x-x) < TOLERANCE && Math.abs(item.y-y) < TOLERANCE) {
                     return item.net;
                 }
@@ -66,12 +66,12 @@ function relink(json, obj, owner) {
 
         for (id in obj.FOOTPRINT) {
             net = netAt(obj.FOOTPRINT[id], x, y, layer);
-            if (net != "") {
+            if (net != "" && item.net != "null" && item.net !== null) {
                 return net;
             }
         }
 
-        // Fail
+        // Fail - will return "" if null or "null"
 
         return ""
 
@@ -82,7 +82,7 @@ function relink(json, obj, owner) {
     for (id in obj.TRACK) {
         if(json.TRACK.hasOwnProperty(id)) {
             item = obj.TRACK[id];
-            if (item.net == "") {
+            if (item.net == "" || item.net == "null" || item.net === null) {
                 console.log("Attempting", id, item);
                 for (point of item.pointArr) {
                     new_net = netAt(json, point.x, point.y, item.layerid);
@@ -107,7 +107,7 @@ function relink(json, obj, owner) {
 
     for (id in obj.VIA) {
         item = obj.VIA[id];
-        if (item.net == "") {
+        if (item.net == "" || item.net == "null" || item.net === null) {
             console.log("Attempting", id, item);
             new_net = netAt(json, item.x, item.y, item.layerid);
             if (new_net != "") {
@@ -128,7 +128,7 @@ function relink(json, obj, owner) {
 
     for (id in obj.PAD) {
         item = obj.PAD[id];
-        if (item.net == "") {
+        if (item.net == "" || item.net == "null" || item.net === null) {
             console.log("Attempting", id, item);
             new_net = netAt(json, item.x, item.y, item.layerid);
             if (new_net != "") {
@@ -172,5 +172,5 @@ do {
 } while (count > 0 && i < 10);
 
 if (count > 0) {
-    alert("Relink: exited after 10 passes; run again.");
+    alert("Relink v2: exited after 10 passes; run again.");
 }

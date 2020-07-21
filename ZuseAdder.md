@@ -1,5 +1,7 @@
 # 16 Bit Zuse Adder
 
+Note: Please read [The War on Voltage Drop](Voltage.md) for context on the revision history of the PCB boards.
+
 The Zuse Adder is an amazing relay circuit created by computing pioneer [Konrad Zuse](https://en.wikipedia.org/wiki/Konrad_Zuse) in the late 1930s. A normal adder has 3 inputs (the two data bits A and B plus a carry-in bit) and two outputs (the result plus carry-out). This is quite straightforward, but suffers from the problem of carry-propagation delay. Each bit in the sum has to wait until the previous bit is computed in order to get its carry-in bit, so you have to wait for the carry states to ripple down the adder.
 
 The Zuse Adder, on the other hand, has 5 inputs (the two data bits A and B, carry-in, **not-carry-in**, and true) and 3 outputs (the result, carry-out, and not-carry-out). By propagating both the carry state and its inverse, each bit adder always has at least 2 current sources (one of the carries plus the true input), and a clever combination of two 4PDT relays per bit can route these to the correct outputs (only two of which can be true), with no carry propagation delay (other than the electrons meandering down the circuit paths, of course).
@@ -40,13 +42,19 @@ The Revision 2.0 board design fixes the ground connection problem and adds bridg
 
 * Note: I created an alternate EasyEDA PCB Library entry for the B relays that included the solder jumpers. This meant they didn't have to be manually added to the schematic.
 
-I have not yet had a need to manufacture any Rev 2.0 boards.
-
 Note: It turns out there is a design error with the ENABLE circuit in the Rev 2.0 boards that I am working on addressing. See [this note](LogicUnit.md#board-design-mistake) for more details.
+
+A second error is that if the NOT relay array *is* populated but the SUB activation relay *is not* populated, and SUB is not jumpered, the NC SUB relay connections need to be bridged in order for the adder to operate properly. I omitted solder jumpers for this functionality. The workaround is to use some 0-ohm SMT resistors as jumper wires.
+
+I only ran into this error because I fully populated the board to test out the subtract function, and then removed the activation relays to configure the board for use in my prototype ALU.
+
+I have also incorporated the lessons from the War on Voltage Drop into the Revision 2.0 design.
+
+This board has been manufactured and tested.
 
 # Board Availability
 
-Because of the minimum quantity requirements of the board manufacturer, I have extra Revision 1.0 boards that I don't need. If you want one, email me at trebor@animeigo.com and you can have one for cost+shipping. $10 gets you a board, shipped anywhere in the USA, while supplies last.
+Because of the minimum quantity requirements of the board manufacturer, I have extra Revision 1.0 and 2.0 boards that I don't need. If you want one, email me at trebor@animeigo.com and you can have one for cost+shipping. $10 gets you a board, shipped anywhere in the USA, while supplies last.
 
 # Resources
 
@@ -56,6 +64,6 @@ Because of the minimum quantity requirements of the board manufacturer, I have e
 
 * [Board Test Script](/HardwareTests/ZuseAdder.py).
 
-* [EasyEda Project](https://easyeda.com/MadOverlord/zuse-relay-adder) and Gerber files for [Rev 2.0](/Gerber/ZuseAdder_Rev_2.0.zip) board.
+* [EasyEda Project](https://easyeda.com/MadOverlord/zuse-relay-adder), [Gerber Files](/Gerber/ZuseAdder_Rev_2.0.zip) and [BOM](/BOMs/ZuseAdder_Rev_2.0.zip) for Rev 2.0 board.
 
 * Boards were manufactured by [JLCPCB](https://jlcpcb.com/). Parts were sourced from [LCSC](https://lcsc.com/) and [Digikey](https://www.digikey.com/).

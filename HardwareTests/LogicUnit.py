@@ -235,8 +235,7 @@ def signal_test():
 
 """
 Truth functions for the board; these compute the expected outputs of the device
-for each operation. Returns an integer value, name of test tuple
-Returns a s
+for each operation. Returns an integer value, name of test tuple.
 """
 
 
