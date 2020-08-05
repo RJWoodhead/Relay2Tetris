@@ -12,13 +12,15 @@ import sys
 
 EXIT_DIRTY = False
 
-# Clock tick time. Starts to become unreliable around 400-500hz.
+# Clock tick speed; for demo purposes, we start slow and ramp up.
 
-TICK = 0.005
+START_TICK = 0.5
+MAX_TICK = 1 / 200.0
+TICK_ACCEL = 0.1
 
 # Delay between reads when debouncing board outputs; None = do not debounce.
 
-DEBOUNCE = 0.002
+DEBOUNCE = 1 / 500.0
 
 # Number of cycles in torture test section.
 
@@ -45,11 +47,11 @@ gpio_pins = [5, 6, 16, 17, 22, 23, 24, 25, 12, 13, 18, 19, 20, 21, 26, 27]
 # depending on what control lines the board being tested uses.
 
 
-CTL_ENABLE = 0b00000001  # Enable register for CLR/SET
-CTL_RESET = 0b000000010  # Reset register to 0 even if ENABLE = True
-CTL_CLR = 0b00000000100  # Clear bits not present on input (release Hold relays)
-CTL_SET = 0b00000001000  # Set bits present on input (activate Hold relays)
-CTL_MUX = 0b00000010000  # Select input port. Set to 0 if no MUX installed
+CTL_ENABLE = 1 << 0  # Enable register for CLR/SET
+CTL_RESET = 1 << 1   # Reset register to 0 even if ENABLE = True
+CTL_CLR = 1 << 2     # Clear bits not present on input (release Hold relays)
+CTL_SET = 1 << 3     # Set bits present on input (activate Hold relays)
+CTL_MUX = 1 << 4     # Select input port. Set to 0 if no MUX installed
 
 # Note that the register can do AND and OR operations. First, you load the
 # first value via ENABLE|SET|CLR, ENABLE|SET, ENABLE. Then, after putting
@@ -57,7 +59,7 @@ CTL_MUX = 0b00000010000  # Select input port. Set to 0 if no MUX installed
 # ENABLE to AND.
 
 CTL_ALL = CTL_RESET | CTL_ENABLE | CTL_SET | CTL_CLR | CTL_MUX
-CTL_NONE = 0b00000000
+CTL_NONE = 0
 
 # The sequence of control operations in a store operation. Note that
 # the output value does not become stable until the end of the final
@@ -65,16 +67,16 @@ CTL_NONE = 0b00000000
 #
 # This sequence does not include MUX operations.
 
-SEQUENCE = [(TICK, CTL_NONE),
-            (TICK, CTL_ENABLE | CTL_SET | CTL_CLR),
-            (TICK, CTL_ENABLE | CTL_SET | CTL_CLR),
-            (TICK, CTL_ENABLE | CTL_SET),
-            (TICK, CTL_ENABLE | CTL_SET),
-            (TICK, CTL_NONE)]
+SEQUENCE = [CTL_NONE,
+            CTL_ENABLE | CTL_SET | CTL_CLR,
+            CTL_ENABLE | CTL_SET | CTL_CLR,
+            CTL_ENABLE | CTL_SET,
+            CTL_ENABLE | CTL_SET,
+            CTL_NONE]
 
 # MUX-enabled version of SEQUENCE.
 
-SEQUENCE_MUX = [(tick, bits | CTL_MUX if bits != CTL_NONE else 0) for (tick, bits) in SEQUENCE]
+SEQUENCE_MUX = [bits | CTL_MUX if bits != CTL_NONE else 0 for bits in SEQUENCE]
 
 # Basic test patterns for the torture test.
 
@@ -124,6 +126,19 @@ def sleep(duration):
     elapsed = time.clock_gettime(time.CLOCK_MONOTONIC_RAW)
     time.sleep(duration)
     elapsed = time.clock_gettime(time.CLOCK_MONOTONIC_RAW) - elapsed
+
+
+def accel():
+    """
+    Accelerate from START_TICK to MAX_TICK. Apologies for the side-effect.
+    """
+
+    global START_TICK
+
+    result = START_TICK
+    START_TICK += (MAX_TICK - START_TICK) * TICK_ACCEL
+
+    return result
 
 
 def cleanup(signo=None, stack_frame=None):
@@ -213,12 +228,13 @@ def get_bus(device, trace=True):
 
     # Debounce input
 
-    lo_in2, hi_in2 = lo_in + 1, hi_in + 1
-    while (lo_in != lo_in2) or (hi_in != hi_in2):
-        lo_in2, hi_in2 = lo_in, hi_in
-        sleep(DEBOUNCE)
-        lo_in = bus.read_byte_data(device, MCP23017_GPIOA)
-        hi_in = bus.read_byte_data(device, MCP23017_GPIOB)
+    if DEBOUNCE is not None:
+        lo_in2, hi_in2 = None, None
+        while (lo_in != lo_in2) or (hi_in != hi_in2):
+            lo_in2, hi_in2 = lo_in, hi_in
+            sleep(DEBOUNCE)
+            lo_in = bus.read_byte_data(device, MCP23017_GPIOA)
+            hi_in = bus.read_byte_data(device, MCP23017_GPIOB)
 
     if trace:
         print(f'DATA_IN  : device={device:02x} hi={hi_in:08b} lo={lo_in:08b}')
@@ -318,9 +334,13 @@ def test_register_mux(data0, data1, sequence, expected, trace=True, subtrace=Fal
     if DATAIN1 is not None:
         send_bus(DATAIN1, data1, invert=False, settle=None, trace=subtrace)
 
+    # Adjust settle time
+
+    settle = accel()
+
     # Send command sequence with individual settle times.
 
-    for settle, control_lines in sequence:
+    for control_lines in sequence:
         if trace:
             output = get_bus(DATAOUT, trace=subtrace)
             conditions = get_bus(DATACND, trace=subtrace) if DATACND is not None else 0

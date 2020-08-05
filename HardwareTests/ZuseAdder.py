@@ -13,21 +13,27 @@ import random
 
 EXIT_DIRTY = False
 
-# Settle time
+# Clock tick speed; for demo purposes, we start slow and ramp up.
 
-TICK = 1 / 250.0
+START_TICK = 0.5
+MAX_TICK = 1 / 200.0
+TICK_ACCEL = 0.1
+
+# Delay between reads when debouncing board outputs; None = do not debounce.
+
+DEBOUNCE = 1 / 500.0
 
 # Is adder configured as an incrementor or an adder/subtractor.
 
-IS_INCREMENTOR = False
+IS_INCREMENTOR = True
 
 # Is SUBTRACTOR present?
 
-SUBPRESENT = True
+SUBPRESENT = False
 
 # Number of bits in the unit? Limits values used in testing.
 
-BITS_POPULATED = 16
+BITS_POPULATED = 8
 BIT_MASK = (1 << BITS_POPULATED) - 1
 
 # IO Expander Port assignments.
@@ -48,21 +54,12 @@ gpio_pins = [5, 6, 16, 17, 22, 23, 24, 25, 12, 13, 18, 19, 20, 21, 26, 27]
 # IO lines available, in a dual-board setup you get 16. Change these
 # depending on what control lines the board being tested uses.
 
-CTL_ENABLE = 0b00000000  # Revision 2.0 board has no ENABLE, just SUB
-CTL_SUB = 0b0000001
+CTL_SUB = 1 << 0
 
 # Handy to have all the control signals together.
 
-CTL_ALL = CTL_ENABLE | CTL_SUB
-
-# Sequence of control operations. In the case of the adder board, if
-# it's powered, it's generating output, so there is only one element.
-
-SEQUENCE = [(TICK, CTL_ENABLE)]
-
-# SUBTRACT-enabled version of SEQUENCE.
-
-SEQUENCE_SUB = [(TICK, CTL_ALL)]
+CTL_ALL = CTL_SUB
+CTL_NONE = 0
 
 # MCP command bytes.
 
@@ -99,6 +96,19 @@ def sleep(duration):
     elapsed = time.clock_gettime(time.CLOCK_MONOTONIC_RAW)
     time.sleep(duration)
     elapsed = time.clock_gettime(time.CLOCK_MONOTONIC_RAW) - elapsed
+
+
+def accel():
+    """
+    Accelerate from START_TICK to MAX_TICK. Apologies for the side-effect.
+    """
+
+    global START_TICK
+
+    result = START_TICK
+    START_TICK += (MAX_TICK - START_TICK) * TICK_ACCEL
+
+    return result
 
 
 def cleanup(signo=None, stack_frame=None):
@@ -190,8 +200,18 @@ def get_bus(device, trace=True):
     lo_in = bus.read_byte_data(device, MCP23017_GPIOA)
     hi_in = bus.read_byte_data(device, MCP23017_GPIOB)
 
+    # Debounce input
+
+    if DEBOUNCE is not None:
+        lo_in2, hi_in2 = None, None
+        while (lo_in != lo_in2) or (hi_in != hi_in2):
+            lo_in2, hi_in2 = lo_in, hi_in
+            sleep(DEBOUNCE)
+            lo_in = bus.read_byte_data(device, MCP23017_GPIOA)
+            hi_in = bus.read_byte_data(device, MCP23017_GPIOB)
+
     if trace:
-        print(f'DATA_IN:  device={device:02x} hi={hi_in:08b} lo={lo_in:08b}')
+        print(f'DATA_IN  : device={device:02x} hi={hi_in:08b} lo={lo_in:08b}')
 
     return 256*hi_in + lo_in
 
@@ -246,7 +266,7 @@ def signal_test():
     send_bus(DATAINA, 0xFF00, invert=False, pause=None, trace=False)
     send_bus(DATAINB, 0x00FF, invert=False, pause=None, trace=False)
 
-    send_gpio(CTL_ENABLE | (CTL_SUB if SUBPRESENT else 0), invert=False, pause=None, trace=False)
+    send_gpio(CTL_SUB if SUBPRESENT else CTL_NONE, invert=False, pause=None, trace=False)
 
     # Wait until exited by user.
 
@@ -298,7 +318,7 @@ def sub_results(a, b):
 
 def test_zuse(a, b, trace=True, subtrace=True):
 
-    def subtest_zuse(a, b, control, results):
+    def subtest_zuse(a, b, control, results, settle):
 
         expected = results(a, b)
 
@@ -312,7 +332,7 @@ def test_zuse(a, b, trace=True, subtrace=True):
 
         # Control signals
 
-        send_gpio(control, invert=False, pause=TICK, trace=subtrace)
+        send_gpio(control, invert=False, pause=settle, trace=subtrace)
 
         # Check if output == expected.
 
@@ -329,11 +349,13 @@ def test_zuse(a, b, trace=True, subtrace=True):
 
         return output == expected
 
-    if not subtest_zuse(a, b, CTL_ENABLE, add_results):
+    settle = accel()
+
+    if not subtest_zuse(a, b, CTL_NONE, add_results, settle):
         return False
 
     if SUBPRESENT:
-        if not subtest_zuse(a, b, CTL_ENABLE | CTL_SUB, sub_results):
+        if not subtest_zuse(a, b, CTL_SUB, sub_results, settle):
             return False
 
     return True
@@ -343,7 +365,7 @@ def test_zuse(a, b, trace=True, subtrace=True):
 Main Program
 """
 
-print(f'Testing Zuse Adder...')
+print(f'Testing Zuse {"Incrementor" if IS_INCREMENTOR else "Adder"}...')
 
 signal.signal(signal.SIGINT, cleanup)
 signal.signal(signal.SIGTERM, cleanup)
@@ -383,16 +405,24 @@ if not IS_INCREMENTOR:
             if not test_zuse(bit, bit, trace=True, subtrace=False):
                 cleanup()
             print('')
+
+    tests = 0
+    while test_zuse(random.randint(0, BIT_MASK), random.randint(0, BIT_MASK), trace=False, subtrace=False):
+        tests += 1
+        if tests % 100 == 0:
+            print(f'{tests} random tests completed!')
 else:
-    for i in range(0, BIT_MASK):
-        if not test_zuse(i, 0, trace=True, subtrace=False):
+    print(f'Testing adjacent bits...')
+    for bits in [1, 3, 7, 15, 31, 63, 127, 255]:
+        for b in range(BITS_POPULATED):
+            bit = bits << b
+            if bit <= BIT_MASK:
+                if not test_zuse(bit, 0, trace=False, subtrace=False):
+                    cleanup()
+    print(f'Exhaustive test of all values...')
+    for i in range(0, BIT_MASK+1):
+        if not test_zuse(i, 0, trace=False, subtrace=False):
             cleanup()
 
-tests = 50
-
-while test_zuse(random.randint(0, BIT_MASK), random.randint(0, BIT_MASK), trace=False, subtrace=False):
-    tests += 1
-    if tests % 100 == 0:
-        print(f'{tests} tests completed!')
 
 cleanup()

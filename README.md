@@ -6,6 +6,10 @@ A few years prior I was introduced to the [Nand2Tetris](https://www.nand2tetris.
 
 The goal of this project is to completely implement the HACK CPU in relay logic, and also to provide other relay-computer builders with a set of standard board-level relay logic CPU components, such as registers, adders, and so on.
 
+# August 2020 Project Status Video
+
+[![YouTube Video](https://img.youtube.com/vi/P-tVBMidEhQ/0.jpg)](https://youtu.be/P-tVBMidEhQ)
+
 # Completed So Far
 
 * [Conversion of the idealized HACK CPU architecture to a physical model that addresses timing considerations](Design.md).
@@ -15,7 +19,7 @@ The goal of this project is to completely implement the HACK CPU in relay logic,
 * [Register Board](Register.md).
 * [Zuse Adder/Subtractor/Incrementor](ZuseAdder.md)
 * [8 Function Boolean Logic Unit](LogicUnit.md)
-* [2:1 Mux + NOT](MuxNot.md)
+* [2:1 Mux + NOT / Breadboard](MuxNot.md)
 * [Useful EasyEDA scripts](EasyEDA.md).
 * [Gerber Files for all boards](Gerber).
 * [Bills of Materials for all boards](BOMs). (Note: does not include optional components like relay coil voltage drop resistors, voltage regulators, etc., as they will rarely if ever be needed. BOMs are for fully-populated boards including any breadboard relays)
@@ -25,6 +29,8 @@ The goal of this project is to completely implement the HACK CPU in relay logic,
 The fleshing-out of this archive is an ongoing project; please be patient with the author.
 
 # Recent Update History
+
+2020-08-06: Updated all the board design documents, improved the hardware tests, did some project cleanups. Added a project status video.
 
 2020-07-20: Launched the [War on Voltage Drop](Voltage.md). Redesigned all boards based on the results (see individual board pages for details). Created new IO Expander Daughterboard. Added BOMs for all boards.
 
@@ -38,6 +44,10 @@ The fleshing-out of this archive is an ongoing project; please be patient with t
 * Program Counter & Branch Logic.
 * Program ROM.
 * RAM.
+
+# Surplus Board Availability
+
+Due to minimum quantity requirements, I have extras of most of the various versions of the various boards. If you want one, email me at trebor@animeigo.com and we'll work something out.
 
 # Acknowledgements
 

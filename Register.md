@@ -107,14 +107,10 @@ As a consequence of the [The War on Voltage Drop](Voltage.md), the Rev 4.0 board
 
 In the above image, the board is wired to detect 0, -1, and <0.
 
-# Board Availability
-
-Because of the minimum quantity requirements of the board manufacturer, I have extra boards that I don't need. If you want one, email me at trebor@animeigo.com and you can have one for cost+shipping. $10 gets you a board, shipped anywhere in the USA, while supplies last.
-
 # Resources
 
 * [Board Test Script](/HardwareTests/Register16.py).
 
-* [EasyEda Project](https://easyeda.com/MadOverlord/16-bit-register), [Gerber Files](/Gerber/Register_Rev_4.1.zip) and [BOM](/BOMs/Register_Rev_4.1.zip) for Rev 4.1 boards.
+* [EasyEda Project](https://easyeda.com/MadOverlord/16-bit-register), [Gerber Files](/Gerber/Register.zip) and [BOM](/BOMs/Register.csv) for the latest revision of the board.
 
 * Boards were manufactured by [JLCPCB](https://jlcpcb.com/). Parts were sourced from [LCSC](https://lcsc.com/) and [Digikey](https://www.digikey.com/).

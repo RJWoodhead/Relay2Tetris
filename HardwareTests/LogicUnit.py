@@ -13,9 +13,15 @@ import random
 
 EXIT_DIRTY = False
 
-# Settle time
+# Clock tick speed; for demo purposes, we start slow and ramp up.
 
-TICK = 1 / 250
+START_TICK = 0.5
+MAX_TICK = 1 / 200.0
+TICK_ACCEL = 0.1
+
+# Delay between reads when debouncing board outputs; None = do not debounce.
+
+DEBOUNCE = 1 / 500.0
 
 # Number of bits in the unit? Limits values used in testing.
 
@@ -39,12 +45,12 @@ gpio_pins = [5, 6, 16, 17, 22, 23, 24, 25, 12, 13, 18, 19, 20, 21, 26, 27]
 # IO lines available, in a dual-board setup you get 16. Change these
 # depending on what control lines the board being tested uses.
 
-CTL_ENABLE = 0b0001
-CTL_XOR = 0b0010
-CTL_AND = 0b0100
-CTL_NOT = 0b1000
+CTL_XOR = 1 << 1
+CTL_AND = 1 << 2
+CTL_NOT = 1 << 3
 
-CTL_ALL = CTL_ENABLE | CTL_XOR | CTL_AND | CTL_NOT
+CTL_ALL = CTL_XOR | CTL_AND | CTL_NOT
+CTL_NONE = 0
 
 # MCP command bytes.
 
@@ -83,6 +89,19 @@ def sleep(duration):
     elapsed = time.clock_gettime(time.CLOCK_MONOTONIC_RAW) - elapsed
 
 
+def accel():
+    """
+    Accelerate from START_TICK to MAX_TICK. Apologies for the side-effect.
+    """
+    
+    global START_TICK
+    
+    result = START_TICK
+    START_TICK += (MAX_TICK - START_TICK) * TICK_ACCEL
+
+    return result
+
+    
 def cleanup(signo=None, stack_frame=None):
     """
     Clean up the MCP buses and GPIO, then exit.
@@ -97,8 +116,11 @@ def cleanup(signo=None, stack_frame=None):
     bus.write_byte_data(DATAINB, MCP23017_IODIRA, 0xFF)
     bus.write_byte_data(DATAINB, MCP23017_IODIRB, 0xFF)
 
+    GPIO.output(gpio_pins, CTL_NONE)
+    
     GPIO.setup(gpio_pins, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 
+    # GPIO cleanup results in GPIO pin 17 being asserted, not sure why
     GPIO.cleanup()
     print("\n")
     sys.exit(0)
@@ -167,8 +189,18 @@ def get_bus(device, trace=True):
     lo_in = bus.read_byte_data(device, MCP23017_GPIOA)
     hi_in = bus.read_byte_data(device, MCP23017_GPIOB)
 
+    # Debounce input
+
+    if DEBOUNCE is not None:
+        lo_in2, hi_in2 = None, None
+        while (lo_in != lo_in2) or (hi_in != hi_in2):
+            lo_in2, hi_in2 = lo_in, hi_in
+            sleep(DEBOUNCE)
+            lo_in = bus.read_byte_data(device, MCP23017_GPIOA)
+            hi_in = bus.read_byte_data(device, MCP23017_GPIOB)
+
     if trace:
-        print(f'DATA_IN:  device={device:02x} hi={hi_in:08b} lo={lo_in:08b}')
+        print(f'DATA_IN  : device={device:02x} hi={hi_in:08b} lo={lo_in:08b}')
 
     return 256*hi_in + lo_in
 
@@ -235,7 +267,8 @@ def signal_test():
 
 """
 Truth functions for the board; these compute the expected outputs of the device
-for each operation. Returns an integer value, name of test tuple.
+for each operation. Returns an integer value, name of test tuple
+Returns a s
 """
 
 
@@ -281,7 +314,7 @@ def false_results(a, b):
 
 def test_board(a, b, trace=True, subtrace=True):
 
-    def subtest_board(a, b, control, results):
+    def subtest_board(a, b, control, results, settle):
 
         expected = results(a, b)
 
@@ -295,7 +328,7 @@ def test_board(a, b, trace=True, subtrace=True):
 
         # Control signals
 
-        send_gpio(control, invert=False, pause=TICK, trace=subtrace)
+        send_gpio(control, invert=False, pause=settle, trace=subtrace)
 
         # Check if output == expected.
 
@@ -309,17 +342,19 @@ def test_board(a, b, trace=True, subtrace=True):
 
         return data == expected[0]
 
-    subtests = [(and_results, CTL_ENABLE | CTL_AND),
-                (xor_results, CTL_ENABLE | CTL_XOR),
-                (or_results, CTL_ENABLE | CTL_AND | CTL_XOR),
-                (nand_results, CTL_ENABLE | CTL_AND | CTL_NOT),
-                (xnor_results, CTL_ENABLE | CTL_XOR | CTL_NOT),
-                (nor_results, CTL_ENABLE | CTL_AND | CTL_XOR | CTL_NOT),
-                (true_results, CTL_ENABLE | CTL_NOT),
-                (false_results, CTL_ENABLE)]
+    settle = accel()
+    
+    subtests = [(and_results, CTL_AND),
+                (xor_results, CTL_XOR),
+                (or_results, CTL_AND | CTL_XOR),
+                (nand_results, CTL_AND | CTL_NOT),
+                (xnor_results, CTL_XOR | CTL_NOT),
+                (nor_results, CTL_AND | CTL_XOR | CTL_NOT),
+                (true_results, CTL_NOT),
+                (false_results, 0)]
 
     for test, control in subtests:
-        if not subtest_board(a, b, control, test):
+        if not subtest_board(a, b, control, test, settle):
             return False
 
     return True

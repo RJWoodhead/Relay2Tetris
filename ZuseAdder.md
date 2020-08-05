@@ -14,9 +14,9 @@ But it gets better. Normally you set the inputs to the first bit of the adder to
 
 And then it gets even better than that. In binary arithmetic, A-B is equivalent to A+(~B)+1. We can already do A+B+1, so if we add a circuit that can produce ~B, the circuit can also subtract! All of this for only 5 DPDT relays per bit!
 
-![16 Bit Zuse Adder Rev 1.0](/Images/ZuseAdder-Rev1.jpeg)
-
 # Revision 1.0
+
+![16 Bit Zuse Adder Rev 1.0](/Images/ZuseAdder-Rev1.jpeg)
 
 The revision 1.0 Zuse Adder/Subtractor uses the Revision 3.0 Register board as its template, so it has all of the "infrastructure" features of that board.
 
@@ -30,13 +30,15 @@ The revision 1.0 Zuse Adder/Subtractor uses the Revision 3.0 Register board as i
 
 A short video showing the Revision 1.0 board being tested is available on [YouTube](https://www.youtube.com/watch?v=ZFYi-r_6CD0).
 
-# Revision 2.0
-
 While testing the Revision 1 board, I realized I had made a small mistake. All the relays and the ENABLE LED were connected to ground through the ENABLE relay, but the A and B data display LEDs were connected directly to ground. This meant that when power was provided to the board, there was a path from 3V3 through the power-on LED, then to the ENABLE line, and then backwards through any populated relay or its flyback diode to the associated data display LED, and then to ground. This caused all these LEDs to glow dimly. This did not affect function because as soon as the ENABLE relay connected everything to ground, everything corrected itself.
 
 The solution to this was to cut the data display LED resistor ground connections and wire them to the ENABLE line; this is the blue wire in the photo above.
 
 The other thing I didn't realize at the time was that if all you need is an incrementor, you don't need to populate the two B relays per bit; you just need to bridge their normally-closed pads. I did a quick test of this to create an 8-bit incrementor; a short video is up on [YouTube](https://youtu.be/ckB8yvfqFFo).
+
+# Revision 2.0 / 3.0
+
+![16 Bit Zuse Adder Rev 3.0](/Images/ZuseAdder-Rev3.jpeg)
 
 The Revision 2.0 board design fixes the ground connection problem and adds bridges on the B relays so you can hardwire them to create a fixed adder with any value (with or without the +1 from configuring things as an incrementor). In my test of the incrementor setup, I set up an incrementor with a fixed B input of 0 (I just bridged the pads with small wires) to get a +1 result.
 
@@ -48,13 +50,7 @@ A second error is that if the NOT relay array *is* populated but the SUB activat
 
 I only ran into this error because I fully populated the board to test out the subtract function, and then removed the activation relays to configure the board for use in my prototype ALU.
 
-I have also incorporated the lessons from the War on Voltage Drop into the Revision 2.0 design.
-
-This board has been manufactured and tested.
-
-# Board Availability
-
-Because of the minimum quantity requirements of the board manufacturer, I have extra Revision 1.0 and 2.0 boards that I don't need. If you want one, email me at trebor@animeigo.com and you can have one for cost+shipping. $10 gets you a board, shipped anywhere in the USA, while supplies last.
+I then incorporated the lessons from the War on Voltage Drop, resulting in the Rev 3.0 design. The one mistake I've noticed so far is a missing mounting hole in the top-right corner. This has been corrected in the Gerber files.
 
 # Resources
 
@@ -64,6 +60,6 @@ Because of the minimum quantity requirements of the board manufacturer, I have e
 
 * [Board Test Script](/HardwareTests/ZuseAdder.py).
 
-* [EasyEda Project](https://easyeda.com/MadOverlord/zuse-relay-adder), [Gerber Files](/Gerber/ZuseAdder_Rev_2.0.zip) and [BOM](/BOMs/ZuseAdder_Rev_2.0.zip) for Rev 2.0 board.
+* [EasyEda Project](https://easyeda.com/MadOverlord/zuse-relay-adder), [Gerber Files](/Gerber/ZuseAdder.zip) and [BOM](/BOMs/ZuseAdder.csv) for latest revision of the board.
 
 * Boards were manufactured by [JLCPCB](https://jlcpcb.com/). Parts were sourced from [LCSC](https://lcsc.com/) and [Digikey](https://www.digikey.com/).
