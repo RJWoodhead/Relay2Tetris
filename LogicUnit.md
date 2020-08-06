@@ -49,7 +49,7 @@ A second error is that if the NOT relay is not populated, and NOT is not activat
 
 Revision 2.0 of the board incorporates all of the lessons learned during the War on Voltage Drop. In addition, the unused space on the board has been filled with a relay breadboard that may come in handy; this is configured like the bit test unit on the register board, so it can easily be wired to do bit value tests if needed.
 
-This board has been manufactured and tested.
+This board has been manufactured and tested. The only mistake I've noticed so far is that I swapped the labels on the ALWAYS and NEVER NOT-Control jumpers. This has been corrected in the 2.1 revision.
 
 # Resources
 
