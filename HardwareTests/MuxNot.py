@@ -30,9 +30,12 @@ BIT_MASK = (1 << BITS_POPULATED) - 1
 
 # IO Expander Port assignments.
 
-DATAINA = 0x20
-DATAINB = 0x21
+DATAIN0 = 0x20
+DATAIN1 = None  # 0x21  # None to disable (for ZXNX, ZYNY boards)
 DATAOUT = 0x22
+DATACND = None  # 0x23  # Condition codes output from board (None to disable)
+
+ACTIVE_PORTS = [port for port in [DATAIN0, DATAIN1, DATAOUT, DATACND] if port is not None]
 
 bus = smbus.SMBus(1)    # Communications bus.
 
@@ -109,11 +112,9 @@ def cleanup(signo=None, stack_frame=None):
     if EXIT_DIRTY:
         sys.exit(0)
 
-    bus.write_byte_data(DATAINA, MCP23017_IODIRA, 0xFF)
-    bus.write_byte_data(DATAINA, MCP23017_IODIRB, 0xFF)
-
-    bus.write_byte_data(DATAINB, MCP23017_IODIRA, 0xFF)
-    bus.write_byte_data(DATAINB, MCP23017_IODIRB, 0xFF)
+    for port in ACTIVE_PORTS:
+        bus.write_byte_data(port, MCP23017_IODIRA, 0xFF)
+        bus.write_byte_data(port, MCP23017_IODIRB, 0xFF)
 
     GPIO.setup(gpio_pins, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 
@@ -129,28 +130,31 @@ def configure_bus():
     Configure the MCP registers to default values.
     """
 
-    for addr in range(22):
-        bus.write_byte_data(DATAOUT, addr, 0xFF if addr == 0 or addr == 1 else 0x00)
-        bus.write_byte_data(DATAINA, addr, 0xFF if addr == 0 or addr == 1 else 0x00)
-        bus.write_byte_data(DATAINB, addr, 0xFF if addr == 0 or addr == 1 else 0x00)
+    # Reset to defaults, set ports to input.
+
+    for port in ACTIVE_PORTS:
+        for addr in range(22):
+            bus.write_byte_data(port, addr, 0xFF if addr <= 1 else 0x00)
 
     # Set _WRITE pins to output.
 
-    bus.write_byte_data(DATAINA, MCP23017_IODIRA, 0x00)
-    bus.write_byte_data(DATAINA, MCP23017_IODIRB, 0x00)
+    if DATAIN0 is not None:
+        bus.write_byte_data(DATAIN0, MCP23017_IODIRA, 0x00)
+        bus.write_byte_data(DATAIN0, MCP23017_IODIRB, 0x00)
 
-    bus.write_byte_data(DATAINB, MCP23017_IODIRA, 0x00)
-    bus.write_byte_data(DATAINB, MCP23017_IODIRB, 0x00)
+    if DATAIN1 is not None:
+        bus.write_byte_data(DATAIN1, MCP23017_IODIRA, 0x00)
+        bus.write_byte_data(DATAIN1, MCP23017_IODIRB, 0x00)
 
-    # Set _READ pins to input.
+    # Disable pullup on read pins.
 
-    bus.write_byte_data(DATAOUT, MCP23017_IODIRA, 0xFF)
-    bus.write_byte_data(DATAOUT, MCP23017_IODIRB, 0xFF)
+    if DATAOUT is not None:
+        bus.write_byte_data(DATAOUT, MCP23017_GPPUA, 0x00)
+        bus.write_byte_data(DATAOUT, MCP23017_GPPUB, 0x00)
 
-    # Disable pullup on _READ pins (we have external pulldown if needed on the board).
-
-    bus.write_byte_data(DATAOUT, MCP23017_GPPUA, 0x00)
-    bus.write_byte_data(DATAOUT, MCP23017_GPPUB, 0x00)
+    if DATACND is not None:
+        bus.write_byte_data(DATACND, MCP23017_GPPUA, 0x00)
+        bus.write_byte_data(DATACND, MCP23017_GPPUB, 0x00)
 
 
 def send_bus(device, data, invert=False, pause=None, trace=True):
@@ -248,8 +252,9 @@ def signal_test():
 
     # Change this to change the data pattern being sent out.
 
-    send_bus(DATAINA, 0x0000, invert=False, pause=None, trace=False)
-    send_bus(DATAINB, 0x0000, invert=False, pause=None, trace=False)
+    send_bus(DATAIN0, 0x0000, invert=False, pause=None, trace=False)
+    if DATAIN1 is not None:
+        send_bus(DATAIN1, 0x0000, invert=False, pause=None, trace=False)
 
     send_gpio(CTL_ALL, invert=False, pause=None, trace=False)
 
@@ -261,10 +266,18 @@ def signal_test():
         sleep(1)
 
 
+def condition_codes(value):
+    """
+    Computes the condition codes for any result value. Will vary depending on how you have things wired up.
+    In this case, treat the unsigned result as signed.
+    """
+
+    return 0b001 if value > 32767 else 0b010 if value == 0 else 0b100
+
+
 """
 Truth functions for the board; these compute the expected outputs of the device
 for each operation. Returns an integer value, name of test tuple
-Returns a s
 """
 
 
@@ -288,19 +301,23 @@ def mux_on_not_on_results(a, b):
     return ((b ^ 0xFFFF) & BIT_MASK, "MUX-ON NOT-ON")
 
 
-def test_board(a, b, trace=True, subtrace=True):
+def test_board(data0, data1, trace=True, subtrace=True):
 
-    def subtest_board(a, b, control, results, settle):
+    def subtest_board(data0, data1, control, results, settle):
 
-        expected = results(a, b)
+        expected = results(data0, data1)
+
+        expected_conditions = condition_codes(expected[0]) if DATACND is not None else 0
 
         if trace:
-            print(f'REG_OUT:  A={a:016b} ({a}), B={b:016b} ({b}), expected={expected}')
+            print(f'REG_OUT: data0={data0:016b}, data1={data1:016b}, {expected[1]}: expected={expected[0]:016b}:{expected_conditions:04b}')
 
         # Set up output lines.
 
-        send_bus(DATAINA, a, invert=False, pause=None, trace=subtrace)
-        send_bus(DATAINB, b, invert=False, pause=None, trace=subtrace)
+        send_bus(DATAIN0, data0, invert=False, pause=None, trace=subtrace)
+
+        if DATAIN1 is not None:
+            send_bus(DATAIN1, data1, invert=False, pause=None, trace=subtrace)
 
         # Control signals
 
@@ -308,15 +325,21 @@ def test_board(a, b, trace=True, subtrace=True):
 
         # Check if output == expected.
 
-        data = get_bus(DATAOUT, trace=subtrace)
+        output = get_bus(DATAOUT, trace=subtrace)
+        conditions = get_bus(DATACND, trace=subtrace) if DATACND is not None else 0
 
         if trace:
-            print(f'RESULTS:  data={data:016b}')
+            print(f'REG_VAL: data={output:016b}')
 
-        if data != expected[0]:
-            print(f'Error:  a={a:016b}, b={b:016b}, expected={expected}, result={data}')
+        if output != expected[0] or conditions != expected_conditions:
+            print(f'Error:  data0={data0:016b}, data1={data1:016b}, {expected[1]}: expected={expected[0]:016b}:{expected_conditions:04b}, result={output:016b}:{conditions:04b}')
 
-        return data == expected[0]
+        return output == expected[0] and conditions == expected_conditions
+
+    # Abort test if second input not available and its value is not zero.
+
+    if DATAIN1 is None and data1 != 0:
+        return True
 
     settle = accel()
 
@@ -326,7 +349,7 @@ def test_board(a, b, trace=True, subtrace=True):
                 (mux_on_not_on_results, CTL_MUX | CTL_NOT)]
 
     for test, control in subtests:
-        if not subtest_board(a, b, control, test, settle):
+        if not subtest_board(data0, data1, control, test, settle):
             return False
 
     return True
@@ -389,11 +412,14 @@ for b in range(BITS_POPULATED):
         cleanup()
     print('')
 
-tests = 50
+# Only do random tests if second input is available.
 
-while test_board(random.randint(0, BIT_MASK), random.randint(0, BIT_MASK), trace=False, subtrace=False):
-    tests += 1
-    if tests % 100 == 0:
-        print(f'{tests} tests completed!')
+if DATAIN1 is not None:
+    tests = 50
+
+    while test_board(random.randint(0, BIT_MASK), random.randint(0, BIT_MASK), trace=False, subtrace=False):
+        tests += 1
+        if tests % 100 == 0:
+            print(f'{tests} tests completed!')
 
 cleanup()

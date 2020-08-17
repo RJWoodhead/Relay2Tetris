@@ -4,7 +4,7 @@ Eventually, this simulator will have the ability to interface with the actual ha
 
 The Tests subdirectory contains a set of test programs for the simulator, adapted from the Nand2Tetris HACK tests.
 
-**NOTE**: The current version of the simulator is running an older version of the hardware design with fewer clock states than the current design requires. The simulator will be updated in the near future as project requirements dictate.
+**NOTE**: The current version of the simulator is running an older version of the hardware design that does not match the [current design](design.md). The simulator will be updated to match the hardware design when larger chunks of the hardware are being integrated.
 
 # Running the simulator
 

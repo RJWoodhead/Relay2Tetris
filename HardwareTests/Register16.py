@@ -14,7 +14,7 @@ EXIT_DIRTY = False
 
 # Clock tick speed; for demo purposes, we start slow and ramp up.
 
-START_TICK = 0.5
+START_TICK = 0.1      # 0.5 for demos
 MAX_TICK = 1 / 200.0
 TICK_ACCEL = 0.1
 
@@ -31,7 +31,7 @@ TORTURE = 25
 DATAIN0 = 0x20  # Main data input to board (value to store)
 DATAIN1 = 0x21  # Alt data input to board (value to store if MUX enabled)
 DATAOUT = 0x22  # Data output from board (16 bits)
-DATACND = 0x23  # Condition codes output from board (None to disable)
+DATACND = None  # Condition codes output from board (None to disable)
 
 ACTIVE_PORTS = [port for port in [DATAIN0, DATAIN1, DATAOUT, DATACND] if port is not None]
 
@@ -47,11 +47,11 @@ gpio_pins = [5, 6, 16, 17, 22, 23, 24, 25, 12, 13, 18, 19, 20, 21, 26, 27]
 # depending on what control lines the board being tested uses.
 
 
-CTL_ENABLE = 1 << 0  # Enable register for CLR/SET
-CTL_RESET = 1 << 1   # Reset register to 0 even if ENABLE = True
-CTL_CLR = 1 << 2     # Clear bits not present on input (release Hold relays)
-CTL_SET = 1 << 3     # Set bits present on input (activate Hold relays)
-CTL_MUX = 1 << 4     # Select input port. Set to 0 if no MUX installed
+CTL_ENABLE = 1 << 1  # Enable register for CLR/SET
+CTL_RESET = 0        # Reset register to 0 even if ENABLE = True. Set to 0 if RESET disabled.
+CTL_CLR = 1 << 3     # Clear bits not present on input (release Hold relays)
+CTL_SET = 1 << 4     # Set bits present on input (activate Hold relays)
+CTL_MUX = 1 << 6     # Select input port. Set to 0 if no MUX installed
 
 # Note that the register can do AND and OR operations. First, you load the
 # first value via ENABLE|SET|CLR, ENABLE|SET, ENABLE. Then, after putting
@@ -331,7 +331,7 @@ def test_register_mux(data0, data1, sequence, expected, trace=True, subtrace=Fal
 
     send_bus(DATAIN0, data0, invert=False, settle=None, trace=subtrace)
 
-    if DATAIN1 is not None:
+    if CTL_MUX != 0:
         send_bus(DATAIN1, data1, invert=False, settle=None, trace=subtrace)
 
     # Adjust settle time
@@ -373,7 +373,7 @@ def test_register(data, trace=False, subtrace=False):
 
     results = test_register_mux(data, antidata, SEQUENCE, data, trace, subtrace)
 
-    if DATAIN1 is not None:
+    if CTL_MUX != 0:
         test_register_mux(antidata, data, SEQUENCE_MUX, data, trace, subtrace) and results
 
     return results

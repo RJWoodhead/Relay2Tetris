@@ -93,15 +93,15 @@ def accel():
     """
     Accelerate from START_TICK to MAX_TICK. Apologies for the side-effect.
     """
-    
+
     global START_TICK
-    
+
     result = START_TICK
     START_TICK += (MAX_TICK - START_TICK) * TICK_ACCEL
 
     return result
 
-    
+
 def cleanup(signo=None, stack_frame=None):
     """
     Clean up the MCP buses and GPIO, then exit.
@@ -117,7 +117,7 @@ def cleanup(signo=None, stack_frame=None):
     bus.write_byte_data(DATAINB, MCP23017_IODIRB, 0xFF)
 
     GPIO.output(gpio_pins, CTL_NONE)
-    
+
     GPIO.setup(gpio_pins, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 
     # GPIO cleanup results in GPIO pin 17 being asserted, not sure why
@@ -343,7 +343,7 @@ def test_board(a, b, trace=True, subtrace=True):
         return data == expected[0]
 
     settle = accel()
-    
+
     subtests = [(and_results, CTL_AND),
                 (xor_results, CTL_XOR),
                 (or_results, CTL_AND | CTL_XOR),

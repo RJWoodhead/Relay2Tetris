@@ -30,6 +30,11 @@
 # each machine clock. [S]ettle shows that plus the process of settling on the hardware
 # state. [N]one just reports the results of the validation.
 #
+# IMPORTANT: According to Shimon Schocken, the correct hardware behavior when an instruction
+# updates AREG *and* executes a branch is that the branch should go to the value in
+# AREG at the start of the instruction, not the new value computed by the instruction.
+# When the simulator is updated to the current hardware design, keep this in mind!
+#
 # (C)2019 Robert Woodhead - trebor@animeigo.com
 # License: Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0)
 #

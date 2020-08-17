@@ -89,7 +89,7 @@ Note: It turns out there is a design error with the ENABLE circuit in the Rev 3.
 
 ![16 Bit Register Rev 2.0/3.0 Comparison](/Images/Register-Rev2-3.gif)
 
-# Revision 4.0 / 4.1
+# Revision 4.x
 
 As a consequence of the [The War on Voltage Drop](Voltage.md), the Rev 4.0 board has many improvements:
 
@@ -102,6 +102,10 @@ As a consequence of the [The War on Voltage Drop](Voltage.md), the Rev 4.0 board
 * Added RESET signal that clears register even when ENABLE is not raised. In the 4.0 board, the RESET may not work correctly if both ENABLE and SET are also raised and the data bus is non-zero. In practice this should not be a problem since RESET would be raised for many cycles, but this has been fixed in the 4.1 board.
 
 * Since there was space on the board, also added a bit test functional unit. There are two independent test channels (one for each pole in the relays), and for each bit position you can specify that the bit has to be True, False, or Don't Care. The tests can also be set up into subtests that only look at a sequence of bits (so you can test high and low bytes separately, for example). Finally, there are outputs for each of the bits, two additional relays for implementing special purpose logic, and you can then jumper all of these to indicator leds and the upper 4 bits of the 20 pin IDC data connectors as well as any of the control lines. A typical use for this would be detecting when the register is zero or negative.
+
+* In the 4.1 revision, unused parts of the board have been filled with additional breadboard relays.
+
+* In 4.2, improvements were made to the board silkscreen labels (but no layout changes).
 
 ![16 Bit Register Rev 4.0](/Images/Register-Rev4.jpeg)
 

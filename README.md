@@ -10,40 +10,42 @@ The goal of this project is to completely implement the HACK CPU in relay logic,
 
 [![YouTube Video](https://img.youtube.com/vi/P-tVBMidEhQ/0.jpg)](https://youtu.be/P-tVBMidEhQ)
 
-# Completed So Far
+# Project Reports
 
-* [Conversion of the idealized HACK CPU architecture to a physical model that addresses timing considerations](Design.md).
-* [Component-level HACK simulator](Simulator.md).
-* [40-Channel Daisy-chainable Raspberry Pi IO Expansion Board](IOExpander.md).
-* [The War on Voltage Drop](Voltage.md)
-* [Register Board](Register.md).
-* [Zuse Adder/Subtractor/Incrementor](ZuseAdder.md)
-* [8 Function Boolean Logic Unit](LogicUnit.md)
-* [2:1 Mux + NOT / Breadboard](MuxNot.md)
-* [Useful EasyEDA scripts](EasyEDA.md).
-* [Gerber Files for all boards](Gerber).
-* [Bills of Materials for all boards](BOMs). (Note: does not include optional components like relay coil voltage drop resistors, voltage regulators, etc., as they will rarely if ever be needed. BOMs are for fully-populated boards including any breadboard relays)
-* [Datasheets for various hardware components](Datasheets).
+* [Conversion of the idealized HACK CPU architecture to a physical model that addresses timing considerations](/Design.md).
+* [Component-level HACK simulator](/Simulator.md).
+* [40-Channel Daisy-chainable Raspberry Pi IO Expansion Board](/IOExpander.md).
+* [The War on Voltage Drop](/Voltage.md).
+* [Register Board](/Register.md).
+* [Zuse Adder/Subtractor/Incrementor](/ZuseAdder.md).
+* [8 Function Boolean Logic Unit](/LogicUnit.md).
+* [2:1 Mux + NOT / Breadboard](/MuxNot.md).
+* [Arithmetic-Logic Unit](/ALU.md).
+
+# Reference Files
+
+* [Useful EasyEDA scripts](/EasyEDA.md).
+* [Hardware Test scripts)(HardwareTests).
+* [Gerber Files for all boards](/Gerber).
+* [Bills of Materials for all boards](/BOMs). (Note: does not include optional components like relay coil voltage drop resistors, voltage regulators, etc., as they will rarely if ever be needed. BOMs are for fully-populated boards including any breadboard relays)
+* [Datasheets for various hardware components](/Datasheets).
 * [YouTube project playlist](https://www.youtube.com/playlist?list=PL5v_4nsiG1zsZgzh9NE4S_au2oJwVJGt1).
 
 The fleshing-out of this archive is an ongoing project; please be patient with the author.
 
 # Recent Update History
 
+2020-08-17: Assembled and tested the [Arithmetic-Logic Unit](/ALU.md).
+
 2020-08-06: Updated all the board design documents, improved the hardware tests, did some project cleanups. Added a project status video.
 
-2020-07-20: Launched the [War on Voltage Drop](Voltage.md). Redesigned all boards based on the results (see individual board pages for details). Created new IO Expander Daughterboard. Added BOMs for all boards.
+2020-07-20: Launched the [War on Voltage Drop](/Voltage.md). Redesigned all boards based on the results (see individual board pages for details). Created new IO Expander Daughterboard. Added BOMs for all boards.
 
-# Ongoing Projects
+# To-Do List
 
-* HACK Machine ALU. Being assembled.
-
-# Still To Do
-
-* Clock and Sequencer.
-* Program Counter & Branch Logic.
-* Program ROM.
-* RAM.
+* Clock and Sequencer - in design.
+* Program Counter & Branch Unit - in assembly.
+* Program ROM and RAM - optional, may design as proof of concept.
 
 # Surplus Board Availability
 

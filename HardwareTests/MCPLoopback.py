@@ -24,7 +24,7 @@ GPIO_PINS = [5, 6, 16, 17, 22, 23, 24, 25, 12, 13, 18, 19, 20, 21, 26, 27]
 #
 # In this instance, we are testing sending from GPIO pins to a MCP input.
 
-TESTS = [(GPIO_PINS, 0x27)]
+TESTS = [(0x27, 0x26)]
 
 # Extract addresses of MCPs used for test.
 
