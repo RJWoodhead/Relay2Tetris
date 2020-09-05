@@ -27,6 +27,7 @@ DEBOUNCE = 1 / 500.0
 
 BITS_POPULATED = 16
 BIT_MASK = (1 << BITS_POPULATED) - 1
+SIGN_BIT = (1 << BITS_POPULATED - 1)
 
 # Boards in the ALU stack.
 
@@ -40,7 +41,8 @@ DATA = {"D": 0x20,
 
 # IO Expander Input Port assignments (boards we are monitoring)
 
-RESULTS = {"MUXN": 0x22}
+RESULTS = {"MUXN": 0x22,
+           "COND": 0x23}
 
 bus = smbus.SMBus(1)    # Communications bus.
 
@@ -341,28 +343,39 @@ def alu_output(data, op):
     """
 
     xreg = data["D"]
+    xreg &= BIT_MASK
 
     yreg = data["M"] if op["A"] else data["A"]
+    yreg &= BIT_MASK
 
     zxnx = 0 if op["ZX"] else xreg
     zxnx = ~zxnx if op["NX"] else zxnx
+    zxnx &= BIT_MASK
 
     zyny = 0 if op["ZY"] else yreg
     zyny = ~zyny if op["NY"] else zyny
+    zyny &= BIT_MASK
 
     andop = zxnx & zyny
+    andop &= BIT_MASK
+
     addop = zxnx + zyny
+    addop &= BIT_MASK
 
     muxn = addop if op["ADD"] else andop
     muxn = ~muxn if op["NOT"] else muxn
+    muxn &= BIT_MASK
 
-    return {"X": xreg & BIT_MASK,
-            "Y": yreg & BIT_MASK,
-            "ZXNX": zxnx & BIT_MASK,
-            "ZYNY": zyny & BIT_MASK,
-            "AND": andop & BIT_MASK,
-            "ADD": addop & BIT_MASK,
-            "MUXN": muxn & BIT_MASK}
+    cond = 0b010 if muxn == 0 else 0b100 if muxn & SIGN_BIT == 0 else 0b001
+
+    return {"X": xreg,
+            "Y": yreg,
+            "ZXNX": zxnx,
+            "ZYNY": zyny,
+            "AND": andop,
+            "ADD": addop,
+            "MUXN": muxn,
+            "COND": cond}
 
 
 def test_alu(d, a, m, ops={}, omit=[], slomo=False, trace=True):
@@ -427,7 +440,7 @@ def test_alu(d, a, m, ops={}, omit=[], slomo=False, trace=True):
         received = {k: get_bus(reg, trace=False) for (k, reg) in RESULTS.items()}
         failed = [result != expected[k] for (k, result) in received.items()]
         if trace or any(failed):
-            print(f'   Op={op}, Signals={signals}, CTL={INSTRMASK[op]:016b}, Expected={expected}, Received={received}')
+            print(f'   Op={op}, Sig={signals}, CTL={INSTRMASK[op]:016b}, Exp={expected}, Rcv={received}')
         if any(failed):
             return False
 
