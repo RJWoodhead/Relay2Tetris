@@ -6,7 +6,7 @@ This design is a work-in-progress and will undergo significant revision as the a
 
 ![Block diagram for the expanded design](/Images/BlockDiagram.jpg)
 
-The computer a "tick-tock" clock that sequences through an 12-state loop per instruction. The states are then converted into control signals via a matrix or finite-state machine.
+The computer a "tick-tock" clock that sequences through an 10-state loop per instruction. The states are then converted into control signals via a matrix or finite-state machine.
 
 ![Instruction State Matrix](/Images/TimingDiagram.jpg)
 
